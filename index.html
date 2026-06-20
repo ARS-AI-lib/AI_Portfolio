@@ -196,6 +196,18 @@
   .panel h3{font-family:var(--font-display); font-size:15px; font-weight:600; margin:0 0 16px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px;}
   .panel h3 .ph-count{color:var(--text-faint); font-weight:500; font-size:12px;}
 
+  /* ---------- side-by-side row (Phase progress + Coverage) ---------- */
+  .split-row{
+    display:flex; gap:18px; margin-bottom:22px; align-items:stretch; flex-wrap:wrap;
+  }
+  .split-row .panel{
+    margin-bottom:0; flex:1 1 380px; min-width:0;
+  }
+  .split-row .panel.coverage-panel{flex:1 1 460px;}
+  @media (max-width:760px){
+    .split-row{flex-direction:column;}
+  }
+
   /* ---------- Progress by phase ---------- */
   .phase-row{display:grid; grid-template-columns:160px 1fr 50px; gap:14px; align-items:center; margin-bottom:12px;}
   .phase-row:last-child{margin-bottom:0;}
@@ -209,26 +221,6 @@
   .gantt-legend{display:flex; gap:16px; margin-bottom:14px; flex-wrap:wrap; font-size:12px; color:var(--text-dim);}
   .gantt-legend span{display:flex; align-items:center; gap:6px;}
   .legend-dot{width:9px;height:9px;border-radius:3px; display:inline-block;}
-
-  /* ---------- Milestones ---------- */
-  .milestone-track{position:relative; padding:30px 10px 10px;}
-  .milestone-item{
-    display:inline-block; vertical-align:top; width:170px; margin-right:4px; font-size:12px;
-  }
-  .ms-scroll{overflow-x:auto;}
-  .ms-row{display:flex; gap:0; position:relative; padding-top:16px;}
-  .ms-card{
-    flex:0 0 178px; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-soft);
-    background:var(--bg-elev); margin-right:12px; position:relative;
-  }
-  .ms-card .ms-status-dot{width:10px;height:10px;border-radius:50%; position:absolute; top:14px; right:14px;}
-  .ms-card .ms-name{font-weight:600; font-size:12.5px; margin-bottom:6px; padding-right:18px;}
-  .ms-card .ms-date{font-size:11.5px; color:var(--text-dim); margin-bottom:3px;}
-  .ms-card .ms-owner{font-size:11px; color:var(--text-faint);}
-  .ms-card .ms-phase-tag{
-    font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em;
-    margin-bottom:6px; display:block;
-  }
 
   /* ---------- Filters ---------- */
   .filter-bar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
@@ -277,23 +269,25 @@
   .table-empty-state{text-align:center; padding:40px 20px; color:var(--text-faint); font-size:13px;}
 
   /* ---------- Coverage ---------- */
-  .coverage-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
-  @media (max-width:800px){.coverage-grid{grid-template-columns:1fr;}}
-  .coverage-list{display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; padding-right:4px;}
+  .coverage-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:600px){.coverage-grid{grid-template-columns:1fr;}}
+  .coverage-list{display:flex; flex-direction:column; gap:7px; max-height:280px; overflow-y:auto; padding-right:4px;}
   .coverage-item{
-    display:flex; align-items:center; justify-content:space-between; padding:10px 12px;
+    display:flex; align-items:center; justify-content:space-between; padding:8px 10px;
     background:var(--bg-elev); border-radius:var(--radius-sm); border:1px solid var(--border-soft);
+    gap:8px;
   }
-  .coverage-item .ci-left{display:flex; align-items:center; gap:9px; min-width:0;}
-  .coverage-item .ci-name{font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .coverage-item .ci-count{font-size:11px; color:var(--text-faint); flex-shrink:0;}
+  .coverage-item .ci-left{display:flex; align-items:center; gap:8px; min-width:0;}
+  .coverage-item .ci-name{font-size:11.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .coverage-item .ci-count{font-size:10.5px; color:var(--text-faint); flex-shrink:0; white-space:nowrap;}
   .coverage-status-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
 
-  .donut-wrap{display:flex; align-items:center; gap:24px; justify-content:center; flex-wrap:wrap;}
-  .donut-legend{display:flex; flex-direction:column; gap:10px;}
-  .donut-legend-item{display:flex; align-items:center; gap:9px; font-size:12.5px;}
-  .donut-legend-item .dl-dot{width:10px;height:10px;border-radius:3px;}
-  .donut-legend-item .dl-count{color:var(--text-faint); margin-left:auto; font-family:var(--font-mono); font-size:12px;}
+  .donut-wrap{display:flex; align-items:center; gap:14px; justify-content:flex-start; flex-wrap:wrap;}
+  .donut-wrap svg{flex-shrink:0; width:84px; height:84px;}
+  .donut-legend{display:flex; flex-direction:column; gap:7px;}
+  .donut-legend-item{display:flex; align-items:center; gap:7px; font-size:11.5px;}
+  .donut-legend-item .dl-dot{width:9px;height:9px;border-radius:3px;}
+  .donut-legend-item .dl-count{color:var(--text-faint); margin-left:auto; font-family:var(--font-mono); font-size:11px;}
 
   ::-webkit-scrollbar{height:8px; width:8px;}
   ::-webkit-scrollbar-track{background:transparent;}
@@ -606,20 +600,35 @@ function parseGantt(rows) {
 }
 
 // ============================================================
-// DERIVED STATUS (date-aware): Done / In Progress / To Do / At Risk / Delayed
+// DERIVED STATUS — expected-progress model
 // ============================================================
+// expectedProgress = % of the task's elapsed timeline as of today
+// status decision:
+//   progress >= 100                          -> Done
+//   today > end && progress < 100            -> Delayed (overdue)
+//   progress < expectedProgress (not overdue) -> At Risk (behind schedule)
+//   progress > 0                              -> In Progress
+//   else                                       -> To Do
+function expectedProgressPct(task, today) {
+  const total = task.end.getTime() - task.start.getTime();
+  if (total <= 0) return task.start.getTime() <= today.getTime() ? 100 : 0;
+  const elapsed = today.getTime() - task.start.getTime();
+  return Math.max(0, Math.min(100, (elapsed / total) * 100));
+}
+
 function deriveTaskStatus(task, today) {
-  const { progress, rawStatus, end } = task;
-  if (rawStatus === 'Done' && progress >= 100) return 'Done';
+  const { progress, end } = task;
   if (progress >= 100) return 'Done';
 
   const endPassed = end.getTime() < today.getTime();
-  if (endPassed) {
-    return progress > 0 ? 'Delayed' : 'Delayed';
-  }
-  // not yet due
-  if (rawStatus === 'In Progress') return 'In Progress';
-  return rawStatus === 'To Do' ? 'To Do' : rawStatus;
+  if (endPassed) return 'Delayed';
+
+  const expected = expectedProgressPct(task, today);
+  const AT_RISK_TOLERANCE = 1; // percentage points of slack to absorb rounding noise
+  if (progress < expected - AT_RISK_TOLERANCE) return 'At Risk';
+
+  if (progress > 0) return 'In Progress';
+  return 'To Do';
 }
 
 function deriveMilestoneStatus(task, today) {
@@ -658,12 +667,8 @@ function computeProjectMetrics(tasks, today) {
   let health = 'On Track';
   if (delayedTasks.length > 0) health = 'Delayed';
   else {
-    // at risk: something ending within next 7 days but <80% progress
-    const soon = base.some(t => {
-      const daysLeft = (t.end - today) / 86400000;
-      return daysLeft >= 0 && daysLeft <= 7 && t.progress < 80;
-    });
-    if (soon) health = 'At Risk';
+    const atRisk = base.some(t => deriveTaskStatus(t, today) === 'At Risk');
+    if (atRisk) health = 'At Risk';
   }
 
   return {
@@ -920,7 +925,6 @@ function healthPillColors(health) {
 }
 
 function projectCardHTML(p) {
-  const milestone = nextUpcomingMilestone(p.milestones, APP_STATE.today);
   const healthC = healthPillColors(p.metrics.health);
   const progress = p.metrics.overallProgress;
   const progressColor = progress >= 70 ? 'var(--status-done)' : progress >= 35 ? 'var(--status-progress)' : 'var(--status-todo)';
@@ -951,11 +955,6 @@ function projectCardHTML(p) {
           <div class="pc-meta-value">${fmtDate(p.metrics.projectEnd)}</div>
         </div>
       </div>
-      ${milestone ? `
-        <div class="pc-next-milestone">
-          <span class="nm-label">Next milestone</span>
-          <span class="nm-name">${esc(milestone.name)} · ${fmtDate(milestone.start)}</span>
-        </div>` : ''}
     </div>
   `;
 }
@@ -973,11 +972,12 @@ function renderDetail(projectId) {
 
   root.innerHTML = `
     ${detailHeaderHTML(p)}
-    ${phaseProgressPanelHTML(p)}
+    <div class="split-row">
+      ${phaseProgressPanelHTML(p)}
+      ${coveragePanelHTML(p)}
+    </div>
     ${ganttPanelHTML(p)}
-    ${milestonesPanelHTML(p)}
     ${taskTablePanelHTML(p)}
-    ${coveragePanelHTML(p)}
   `;
 
   initGanttCanvas(p);
@@ -1053,12 +1053,12 @@ function ganttPanelHTML(p) {
     <div class="panel">
       <h3>Gantt Timeline <span class="ph-count">${p.tasks.length} tasks</span></h3>
       <div class="gantt-legend">
-        <span><span class="legend-dot" style="background:${STATUS_COLORS['Done'].fg}"></span>Done</span>
-        <span><span class="legend-dot" style="background:${STATUS_COLORS['In Progress'].fg}"></span>In Progress</span>
         <span><span class="legend-dot" style="background:${STATUS_COLORS['To Do'].fg}"></span>To Do</span>
-        <span><span class="legend-dot" style="background:${STATUS_COLORS['Delayed'].fg}"></span>Delayed</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['In Progress'].fg}"></span>In Progress</span>
         <span><span class="legend-dot" style="background:${STATUS_COLORS['At Risk'].fg}"></span>At Risk</span>
-        <span style="margin-left:auto; color:var(--text-faint);">▾ milestone &nbsp; | &nbsp; today line</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['Delayed'].fg}"></span>Delayed</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['Done'].fg}"></span>Done</span>
+        <span style="margin-left:auto; color:var(--text-faint);">┊ today</span>
       </div>
       <div class="gantt-wrap">
         <canvas id="ganttCanvas-${p.id}"></canvas>
@@ -1068,13 +1068,8 @@ function ganttPanelHTML(p) {
 }
 
 function colorForGanttTask(task, today) {
-  if (task.progress >= 100) return STATUS_COLORS['Done'].fg;
-  const endPassed = task.end.getTime() < today.getTime();
-  if (endPassed) return STATUS_COLORS['Delayed'].fg;
-  const daysLeft = (task.end - today) / 86400000;
-  if (daysLeft >= 0 && daysLeft <= 7 && task.progress < 80) return STATUS_COLORS['At Risk'].fg;
-  if (task.progress > 0) return STATUS_COLORS['In Progress'].fg;
-  return STATUS_COLORS['To Do'].fg;
+  const status = deriveTaskStatus(task, today);
+  return STATUS_COLORS[status].fg;
 }
 
 function resolveCSSVar(varExpr) {
@@ -1089,10 +1084,8 @@ function initGanttCanvas(p) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  const milestones = p.milestones;
-  const rowTasks = p.tasks; // includes milestones as zero-width markers handled separately
-  const timelineTasks = rowTasks.filter(t => !t.isMilestone);
-  const dataForRows = timelineTasks.length ? timelineTasks : rowTasks;
+  const rowTasks = p.tasks;
+  const dataForRows = rowTasks;
 
   // group by phase, preserve order
   const phaseGroups = [];
@@ -1106,7 +1099,7 @@ function initGanttCanvas(p) {
   const leftLabelW = 230;
   const dayW = 9; // px per day, will scale down if too wide
 
-  const allDates = rowTasks.flatMap(t => [t.start, t.end]).concat(milestones.flatMap(m => [m.start]));
+  const allDates = rowTasks.flatMap(t => [t.start, t.end]);
   const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
   const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
   const totalDays = Math.max(1, (maxDate - minDate) / 86400000);
@@ -1137,6 +1130,7 @@ function initGanttCanvas(p) {
     textFaint: resolveCSSVar('var(--text-faint)'),
     bgElev: resolveCSSVar('var(--bg-elev)'),
     accent: resolveCSSVar('var(--accent)'),
+    todayLine: resolveCSSVar('var(--status-delayed)'),
   };
 
   ctx.clearRect(0, 0, width, height);
@@ -1173,16 +1167,16 @@ function initGanttCanvas(p) {
   ctx.strokeStyle = css.border;
   ctx.beginPath(); ctx.moveTo(0, headerH); ctx.lineTo(width, headerH); ctx.stroke();
 
-  // today line
+  // today line — red dashed, position recalculated from actual current date each render
   const today = APP_STATE.today;
   if (today >= minDate && today <= maxDate) {
     const tx = xForDate(today);
-    ctx.strokeStyle = css.accent;
+    ctx.strokeStyle = css.todayLine;
     ctx.setLineDash([4, 3]);
     ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(tx, headerH); ctx.lineTo(tx, height); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = css.accent;
+    ctx.fillStyle = css.todayLine;
     ctx.font = '10px Inter, system-ui, sans-serif';
     ctx.fillText('Today', tx + 4, headerH + 12);
   }
@@ -1237,24 +1231,6 @@ function initGanttCanvas(p) {
     });
   });
 
-  // milestone markers (drawn on top, across full chart at their date)
-  milestones.forEach(m => {
-    const mx = xForDate(m.start);
-    const mStatus = deriveMilestoneStatus(m, today);
-    const color = mStatus === 'Done' ? STATUS_COLORS['Done'].fg : mStatus === 'Delayed' ? STATUS_COLORS['Delayed'].fg : css.accent;
-    ctx.fillStyle = resolveCSSVar(color.includes('var') ? color : color);
-    ctx.strokeStyle = '#0a0e18';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(mx, headerH + 2);
-    ctx.lineTo(mx - 6, headerH + 12);
-    ctx.lineTo(mx + 6, headerH + 12);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    hitboxes.push({ x: mx - 6, y: headerH + 2, w: 12, h: 10, task: m, isMilestoneMarker: true });
-  });
-
   // tooltip interaction
   const tooltip = document.getElementById('tooltip');
   canvas.onmousemove = (e) => {
@@ -1264,7 +1240,7 @@ function initGanttCanvas(p) {
     const hit = hitboxes.find(h => mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h);
     if (hit) {
       const t = hit.task;
-      const statusLabel = hit.isMilestoneMarker ? deriveMilestoneStatus(t, today) : deriveTaskStatus(t, today);
+      const statusLabel = deriveTaskStatus(t, today);
       tooltip.innerHTML = `
         <b>${esc(t.name)}</b><br>
         ${esc(t.phase)}<br>
@@ -1297,33 +1273,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
-}
-
-// ---------------- MILESTONES ----------------
-function milestonesPanelHTML(p) {
-  if (!p.milestones.length) {
-    return `<div class="panel"><h3>Milestones</h3><div class="table-empty-state">ไม่พบ milestone (ไม่มี task ที่ Start = End)</div></div>`;
-  }
-  const today = APP_STATE.today;
-  const cards = p.milestones.map(m => {
-    const status = deriveMilestoneStatus(m, today);
-    const c = statusColor(status === 'Done' ? 'Done' : status === 'Delayed' ? 'Delayed' : 'To Do');
-    return `
-      <div class="ms-card">
-        <span class="ms-status-dot" style="background:${c.fg}"></span>
-        <span class="ms-phase-tag">${esc(m.phase)}</span>
-        <div class="ms-name">${esc(m.name)}</div>
-        <div class="ms-date">${fmtDate(m.start)}</div>
-        ${m.owner ? `<div class="ms-owner">${esc(m.owner)}</div>` : ''}
-      </div>
-    `;
-  }).join('');
-  return `
-    <div class="panel">
-      <h3>Milestones <span class="ph-count">${p.milestones.length} milestones · derived from tasks where Start = End</span></h3>
-      <div class="ms-scroll"><div class="ms-row">${cards}</div></div>
-    </div>
-  `;
 }
 
 // ---------------- TASK TABLE + FILTERS ----------------
@@ -1433,7 +1382,7 @@ function renderTaskTable(p) {
   const { agents, skills, phases } = APP_STATE.filters;
   const today = APP_STATE.today;
 
-  let filtered = p.tasks.filter(t => !t.isMilestone || true); // show milestones too, marked distinctly
+  let filtered = p.tasks;
   if (phases.size) filtered = filtered.filter(t => phases.has(t.phase));
   if (agents.size) filtered = filtered.filter(t => t.agents.some(a => agents.has(a)));
   if (skills.size) filtered = filtered.filter(t => t.skills.some(s => skills.has(s)));
@@ -1448,7 +1397,7 @@ function renderTaskTable(p) {
   }
 
   tbody.innerHTML = filtered.map(t => {
-    const status = t.isMilestone ? deriveMilestoneStatus(t, today) : deriveTaskStatus(t, today);
+    const status = deriveTaskStatus(t, today);
     const sc = statusColor(status);
     const progColor = t.progress >= 100 ? 'var(--status-done)' : t.progress > 0 ? 'var(--status-progress)' : 'var(--status-todo)';
 
@@ -1471,7 +1420,7 @@ function renderTaskTable(p) {
     return `
       <tr>
         <td style="color:var(--text-dim); font-size:11.5px;">${esc(t.phase)}</td>
-        <td style="font-weight:500;">${t.isMilestone ? '◆ ' : ''}${esc(t.name)}</td>
+        <td style="font-weight:500;">${esc(t.name)}</td>
         <td style="color:var(--text-dim);">${esc(t.owner) || '—'}</td>
         <td style="white-space:nowrap; color:var(--text-dim);">${fmtDate(t.start)}</td>
         <td style="white-space:nowrap; color:var(--text-dim);">${fmtDate(t.end)}</td>
@@ -1490,20 +1439,20 @@ function renderTaskTable(p) {
 // ---------------- AGENT / SKILL COVERAGE ----------------
 function coveragePanelHTML(p) {
   return `
-    <div class="panel">
+    <div class="panel coverage-panel">
       <h3>Agent &amp; Skill Coverage</h3>
       <div class="coverage-grid">
         <div>
-          <div class="section-label" style="margin-top:0;">AI Agents (${p.agentCoverage.length} used in this project)</div>
+          <div class="section-label" style="margin-top:0;">AI Agents (${p.agentCoverage.length})</div>
           <div id="agentDonut-${p.id}"></div>
-          <div class="coverage-list" style="margin-top:14px;">
+          <div class="coverage-list" style="margin-top:12px;">
             ${p.agentCoverage.map(c => coverageItemHTML(c)).join('') || '<div class="table-empty-state">ไม่มี Agent ที่ผูกกับ task</div>'}
           </div>
         </div>
         <div>
-          <div class="section-label" style="margin-top:0;">Skills (${p.skillCoverage.length} used in this project)</div>
+          <div class="section-label" style="margin-top:0;">Skills (${p.skillCoverage.length})</div>
           <div id="skillDonut-${p.id}"></div>
-          <div class="coverage-list" style="margin-top:14px;">
+          <div class="coverage-list" style="margin-top:12px;">
             ${p.skillCoverage.map(c => coverageItemHTML(c)).join('') || '<div class="table-empty-state">ไม่มี Skill ที่ผูกกับ task</div>'}
           </div>
         </div>
