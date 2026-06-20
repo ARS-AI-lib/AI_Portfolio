@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gen AI SDLC Portfolio Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1420;
+    --bg-elev:#161d2e;
+    --bg-card:#1a2236;
+    --bg-card-hover:#1f2a42;
+    --border:#2a3450;
+    --border-soft:#222b42;
+    --text:#e8ecf6;
+    --text-dim:#9aa6c4;
+    --text-faint:#5d6889;
+    --accent:#5b8def;
+    --accent-soft:rgba(91,141,239,.14);
+
+    --status-done:#3ec98a;
+    --status-done-bg:rgba(62,201,138,.14);
+    --status-progress:#f0a23a;
+    --status-progress-bg:rgba(240,162,58,.14);
+    --status-todo:#5d6889;
+    --status-todo-bg:rgba(93,104,137,.16);
+    --status-risk:#f0c93a;
+    --status-risk-bg:rgba(240,201,58,.14);
+    --status-delayed:#e25c5c;
+    --status-delayed-bg:rgba(226,92,92,.14);
+
+    --radius-sm:8px;
+    --radius-md:12px;
+    --radius-lg:18px;
+    --font-display: 'Sora', 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(ellipse 1200px 600px at 50% -10%, #1c2942 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft);}
+
+  a{color:var(--accent); text-decoration:none;}
+
+  /* ---------- Layout shell ---------- */
+  #app{max-width:1320px; margin:0 auto; padding:28px 28px 80px;}
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:28px; gap:16px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:36px;height:36px;border-radius:10px;
+    background:linear-gradient(135deg,#5b8def,#7c5cf0);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff;
+    flex-shrink:0;
+  }
+  .brand-text h1{font-family:var(--font-display); font-size:17px; font-weight:600; margin:0; letter-spacing:-.01em;}
+  .brand-text p{font-size:12px; color:var(--text-faint); margin:2px 0 0;}
+
+  .refresh-row{display:flex; align-items:center; gap:10px;}
+  .last-updated{font-size:12px; color:var(--text-faint);}
+  .btn{
+    appearance:none; border:1px solid var(--border); background:var(--bg-card);
+    color:var(--text); font-size:13px; font-weight:500; padding:9px 16px;
+    border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:6px;
+    transition:.15s;
+  }
+  .btn:hover{background:var(--bg-card-hover); border-color:var(--accent);}
+  .btn:active{transform:translateY(1px);}
+  .btn-icon{width:14px;height:14px;}
+  .btn.spinning .btn-icon{animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Breadcrumb / view switching ---------- */
+  .crumb{
+    display:flex; align-items:center; gap:8px; margin-bottom:20px;
+    font-size:13px; color:var(--text-faint);
+  }
+  .crumb button{
+    background:none;border:none;color:var(--text-dim);font-size:13px;
+    cursor:pointer; padding:0; font-family:inherit;
+  }
+  .crumb button:hover{color:var(--accent);}
+  .crumb .sep{color:var(--text-faint);}
+  .crumb .current{color:var(--text); font-weight:600;}
+
+  #view-portfolio, #view-detail{display:none;}
+  #view-portfolio.active, #view-detail.active{display:block;}
+
+  /* ---------- Loading / error ---------- */
+  .loading-screen{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:50vh; gap:14px; color:var(--text-faint);
+  }
+  .spinner{
+    width:28px;height:28px;border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  .error-banner{
+    background:var(--status-delayed-bg); border:1px solid var(--status-delayed);
+    color:#ffb3b3; padding:12px 16px; border-radius:var(--radius-sm);
+    font-size:13px; margin-bottom:16px;
+  }
+  .error-banner b{color:#fff;}
+
+  /* ---------- Portfolio summary strip ---------- */
+  .portfolio-summary{
+    background:var(--bg-card); border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg); padding:22px 26px; margin-bottom:24px;
+    display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:28px; align-items:center;
+  }
+  @media (max-width:900px){.portfolio-summary{grid-template-columns:1fr 1fr; row-gap:18px;}}
+  .ps-block .ps-label{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+  .ps-block .ps-value{font-family:var(--font-display); font-size:26px; font-weight:600; letter-spacing:-.01em;}
+  .ps-block .ps-sub{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .ps-progress-track{
+    height:8px; border-radius:5px; background:var(--bg-elev); overflow:hidden; margin-top:10px;
+  }
+  .ps-progress-fill{height:100%; border-radius:5px; background:linear-gradient(90deg,#5b8def,#7c5cf0);}
+
+  .health-dot{display:inline-block; width:8px;height:8px;border-radius:50%; margin-right:6px;}
+
+  /* ---------- Project cards grid ---------- */
+  .section-label{
+    font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--text-faint); margin:30px 0 14px;
+  }
+  .project-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px;}
+  .project-card{
+    background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    padding:20px; cursor:pointer; transition:.15s; position:relative; overflow:hidden;
+  }
+  .project-card:hover{background:var(--bg-card-hover); border-color:var(--accent); transform:translateY(-1px);}
+  .project-card .pc-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:10px;}
+  .project-card h3{font-family:var(--font-display); font-size:16px; font-weight:600; margin:0 0 4px; letter-spacing:-.01em;}
+  .project-card .pc-owner{font-size:12px; color:var(--text-faint);}
+  .status-pill{
+    font-size:11px; font-weight:600; padding:4px 10px; border-radius:99px; white-space:nowrap;
+    display:flex; align-items:center; gap:5px;
+  }
+  .pc-progress-row{display:flex; align-items:center; gap:10px; margin:14px 0 16px;}
+  .pc-progress-track{flex:1; height:7px; border-radius:5px; background:var(--bg-elev); overflow:hidden;}
+  .pc-progress-fill{height:100%; border-radius:5px;}
+  .pc-progress-pct{font-family:var(--font-mono); font-size:13px; font-weight:600; min-width:40px; text-align:right;}
+  .pc-meta{display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;}
+  .pc-meta-item .pc-meta-label{color:var(--text-faint); margin-bottom:2px; font-size:11px;}
+  .pc-meta-item .pc-meta-value{color:var(--text); font-weight:500;}
+  .pc-next-milestone{
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);
+    font-size:12px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .pc-next-milestone .nm-label{color:var(--text-faint);}
+  .pc-next-milestone .nm-name{color:var(--text); font-weight:500;}
+  .pc-warn-badge{
+    position:absolute; top:0; right:0; background:var(--status-delayed);
+    color:#fff; font-size:10px; font-weight:700; padding:3px 9px; border-radius:0 var(--radius-lg) 0 8px;
+  }
+
+  /* ---------- Detail header ---------- */
+  .detail-header{
+    background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    padding:24px 26px; margin-bottom:22px;
+  }
+  .dh-top{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:18px;}
+  .dh-title h2{font-family:var(--font-display); font-size:22px; font-weight:600; margin:0 0 4px; letter-spacing:-.01em;}
+  .dh-title .dh-owner{font-size:13px; color:var(--text-faint);}
+  .dh-kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:20px;}
+  @media (max-width:900px){.dh-kpis{grid-template-columns:repeat(2,1fr);}}
+  .dh-kpi .k-label{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px;}
+  .dh-kpi .k-value{font-family:var(--font-display); font-size:19px; font-weight:600;}
+  .dh-kpi .k-sub{font-size:11px; color:var(--text-dim); margin-top:2px;}
+  .data-mismatch-note{
+    margin-top:14px; padding:10px 14px; background:var(--status-risk-bg); border:1px solid var(--status-risk);
+    border-radius:var(--radius-sm); font-size:12px; color:#ffe7a8;
+  }
+
+  /* ---------- generic card/panel ---------- */
+  .panel{
+    background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
+    padding:22px 24px; margin-bottom:22px;
+  }
+  .panel h3{font-family:var(--font-display); font-size:15px; font-weight:600; margin:0 0 16px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px;}
+  .panel h3 .ph-count{color:var(--text-faint); font-weight:500; font-size:12px;}
+
+  /* ---------- Progress by phase ---------- */
+  .phase-row{display:grid; grid-template-columns:160px 1fr 50px; gap:14px; align-items:center; margin-bottom:12px;}
+  .phase-row:last-child{margin-bottom:0;}
+  .phase-name{font-size:12.5px; font-weight:600; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .phase-track{height:9px; border-radius:5px; background:var(--bg-elev); overflow:hidden; position:relative;}
+  .phase-fill{height:100%; border-radius:5px;}
+  .phase-pct{font-family:var(--font-mono); font-size:12px; text-align:right; color:var(--text-dim);}
+
+  /* ---------- Gantt ---------- */
+  .gantt-wrap{overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--border-soft);}
+  .gantt-legend{display:flex; gap:16px; margin-bottom:14px; flex-wrap:wrap; font-size:12px; color:var(--text-dim);}
+  .gantt-legend span{display:flex; align-items:center; gap:6px;}
+  .legend-dot{width:9px;height:9px;border-radius:3px; display:inline-block;}
+
+  /* ---------- Milestones ---------- */
+  .milestone-track{position:relative; padding:30px 10px 10px;}
+  .milestone-item{
+    display:inline-block; vertical-align:top; width:170px; margin-right:4px; font-size:12px;
+  }
+  .ms-scroll{overflow-x:auto;}
+  .ms-row{display:flex; gap:0; position:relative; padding-top:16px;}
+  .ms-card{
+    flex:0 0 178px; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border-soft);
+    background:var(--bg-elev); margin-right:12px; position:relative;
+  }
+  .ms-card .ms-status-dot{width:10px;height:10px;border-radius:50%; position:absolute; top:14px; right:14px;}
+  .ms-card .ms-name{font-weight:600; font-size:12.5px; margin-bottom:6px; padding-right:18px;}
+  .ms-card .ms-date{font-size:11.5px; color:var(--text-dim); margin-bottom:3px;}
+  .ms-card .ms-owner{font-size:11px; color:var(--text-faint);}
+  .ms-card .ms-phase-tag{
+    font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.04em;
+    margin-bottom:6px; display:block;
+  }
+
+  /* ---------- Filters ---------- */
+  .filter-bar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;}
+  .filter-select{position:relative;}
+  .filter-btn{
+    background:var(--bg-elev); border:1px solid var(--border); color:var(--text-dim);
+    font-size:12.5px; padding:8px 12px; border-radius:var(--radius-sm); cursor:pointer;
+    display:flex; align-items:center; gap:6px; min-width:120px; justify-content:space-between;
+  }
+  .filter-btn.has-value{border-color:var(--accent); color:var(--text);}
+  .filter-badge{
+    background:var(--accent); color:#fff; font-size:10px; font-weight:700;
+    border-radius:99px; padding:1px 6px; margin-left:4px;
+  }
+  .filter-dropdown{
+    position:absolute; top:calc(100% + 6px); left:0; z-index:30; min-width:220px; max-height:280px; overflow-y:auto;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.4); display:none;
+  }
+  .filter-dropdown.open{display:block;}
+  .filter-opt{
+    display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:6px; cursor:pointer; font-size:12.5px;
+  }
+  .filter-opt:hover{background:var(--bg-card-hover);}
+  .filter-opt input{accent-color:var(--accent);}
+  .filter-clear{font-size:12px; color:var(--accent); cursor:pointer; padding:8px 10px; display:flex; align-items:center;}
+
+  /* ---------- Task table ---------- */
+  .task-table-wrap{overflow-x:auto;}
+  table.task-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.task-table th{
+    text-align:left; padding:9px 12px; color:var(--text-faint); font-weight:600;
+    font-size:11px; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border-soft);
+    white-space:nowrap; position:sticky; top:0; background:var(--bg-card);
+  }
+  table.task-table td{padding:10px 12px; border-bottom:1px solid var(--border-soft); vertical-align:middle;}
+  table.task-table tr:hover td{background:var(--bg-card-hover);}
+  .td-progress-track{width:70px; height:6px; border-radius:4px; background:var(--bg-elev); overflow:hidden; display:inline-block; vertical-align:middle; margin-right:8px;}
+  .td-progress-fill{height:100%; border-radius:4px;}
+  .chip-group{display:flex; gap:4px; flex-wrap:wrap; max-width:260px;}
+  .chip{
+    font-size:10.5px; padding:2px 8px; border-radius:99px; white-space:nowrap;
+    border:1px solid transparent;
+  }
+  .chip-empty{color:var(--text-faint); font-size:11px;}
+  .table-empty-state{text-align:center; padding:40px 20px; color:var(--text-faint); font-size:13px;}
+
+  /* ---------- Coverage ---------- */
+  .coverage-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:800px){.coverage-grid{grid-template-columns:1fr;}}
+  .coverage-list{display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto; padding-right:4px;}
+  .coverage-item{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 12px;
+    background:var(--bg-elev); border-radius:var(--radius-sm); border:1px solid var(--border-soft);
+  }
+  .coverage-item .ci-left{display:flex; align-items:center; gap:9px; min-width:0;}
+  .coverage-item .ci-name{font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .coverage-item .ci-count{font-size:11px; color:var(--text-faint); flex-shrink:0;}
+  .coverage-status-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
+
+  .donut-wrap{display:flex; align-items:center; gap:24px; justify-content:center; flex-wrap:wrap;}
+  .donut-legend{display:flex; flex-direction:column; gap:10px;}
+  .donut-legend-item{display:flex; align-items:center; gap:9px; font-size:12.5px;}
+  .donut-legend-item .dl-dot{width:10px;height:10px;border-radius:3px;}
+  .donut-legend-item .dl-count{color:var(--text-faint); margin-left:auto; font-family:var(--font-mono); font-size:12px;}
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
+
+  .tooltip{
+    position:fixed; background:#0a0e18; border:1px solid var(--border); color:var(--text);
+    padding:10px 13px; border-radius:8px; font-size:12px; pointer-events:none; z-index:100;
+    box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:280px; display:none; line-height:1.5;
+  }
+  .tooltip b{color:#fff;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">AI</div>
+      <div class="brand-text">
+        <h1>Gen AI SDLC Portfolio Dashboard</h1>
+        <p>Agent &amp; Skill development tracking across projects</p>
+      </div>
+    </div>
+    <div class="refresh-row">
+      <span class="last-updated" id="lastUpdated"></span>
+      <button class="btn" id="refreshBtn" onclick="window.dashboardRefresh()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="crumb" id="crumbBar">
+    <button onclick="window.dashboardGoPortfolio()">Portfolio</button>
+  </div>
+
+  <div id="loadingScreen" class="loading-screen">
+    <div class="spinner"></div>
+    <div>Loading project data…</div>
+  </div>
+
+  <div id="errorBanner"></div>
+
+  <div id="view-portfolio"></div>
+  <div id="view-detail"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const REGISTRY_SHEET_ID = '1Grv9hSPdc4d6hjSuIBiGdM8jPTLWrOyhVdH0BSCU-3s';
+const REGISTRY_GID = '0'; // first tab of the registry file
+
+const STATUS_ALIAS = {
+  'completed': 'Done',
+  'done': 'Done',
+  'ontrack': 'In Progress',
+  'on track': 'In Progress',
+  'in progress': 'In Progress',
+  'planned': 'To Do',
+  'to do': 'To Do',
+  'todo': 'To Do',
+};
+
+const STATUS_COLORS = {
+  'Done':        { fg: 'var(--status-done)',     bg: 'var(--status-done-bg)' },
+  'In Progress': { fg: 'var(--status-progress)',  bg: 'var(--status-progress-bg)' },
+  'To Do':       { fg: 'var(--status-todo)',      bg: 'var(--status-todo-bg)' },
+  'At Risk':     { fg: 'var(--status-risk)',      bg: 'var(--status-risk-bg)' },
+  'Delayed':     { fg: 'var(--status-delayed)',   bg: 'var(--status-delayed-bg)' },
+};
+
+const AGENT_SKILL_STATUS_COLORS = {
+  'WIP':   { fg: 'var(--status-progress)', bg: 'var(--status-progress-bg)' },
+  'TO DO': { fg: 'var(--status-todo)',     bg: 'var(--status-todo-bg)' },
+};
+
+function gvizUrl(sheetId, gid) {
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+}
+
+// ============================================================
+// CSV PARSER (handles quoted fields with embedded commas/newlines)
+// ============================================================
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+async function fetchCSV(sheetId, gid) {
+  const url = gvizUrl(sheetId, gid);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed (${res.status}) for gid ${gid}`);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+// ============================================================
+// DATE PARSING — defensive, handles M/D/YYYY, D MMM YYYY, D-MMM-YY
+// ============================================================
+const MONTH_MAP = {
+  jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11
+};
+function parseFlexDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  if (!str) return null;
+
+  // M/D/YYYY or M/D/YY
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let [, mo, d, y] = m;
+    y = y.length === 2 ? '20' + y : y;
+    return new Date(+y, +mo - 1, +d);
+  }
+
+  // D MMM YYYY  e.g. "11 May 2026"
+  m = str.match(/^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/);
+  if (m) {
+    const [, d, monStr, y] = m;
+    const mon = MONTH_MAP[monStr.slice(0,3).toLowerCase()];
+    if (mon !== undefined) return new Date(+y, mon, +d);
+  }
+
+  // D-MMM-YY  e.g. "15-May-26"
+  m = str.match(/^(\d{1,2})-([A-Za-z]{3,})-(\d{2,4})$/);
+  if (m) {
+    let [, d, monStr, y] = m;
+    y = y.length === 2 ? '20' + y : y;
+    const mon = MONTH_MAP[monStr.slice(0,3).toLowerCase()];
+    if (mon !== undefined) return new Date(+y, mon, +d);
+  }
+
+  // ISO fallback
+  const iso = new Date(str);
+  if (!isNaN(iso.getTime())) return iso;
+
+  return null;
+}
+
+function parsePercent(str) {
+  if (!str) return 0;
+  // strip duplicated % signs and whitespace
+  const cleaned = str.replace(/%+/g, '').trim();
+  const n = parseFloat(cleaned);
+  if (isNaN(n)) return 0;
+  return Math.max(0, Math.min(100, n));
+}
+
+function splitMultiValue(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function normalizeStatus(raw) {
+  if (!raw) return 'To Do';
+  const key = raw.trim().toLowerCase();
+  return STATUS_ALIAS[key] || raw.trim();
+}
+
+// ============================================================
+// REGISTRY
+// ============================================================
+async function fetchRegistry() {
+  const rows = await fetchCSV(REGISTRY_SHEET_ID, REGISTRY_GID);
+  if (!rows.length) throw new Error('Registry sheet is empty');
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const idx = {
+    name: header.indexOf('project name'),
+    sheetId: header.indexOf('sheet id'),
+    gantt: header.indexOf('gantt gid'),
+    agent: header.indexOf('agent gid'),
+    skill: header.indexOf('skill gid'),
+    status: header.indexOf('status'),
+    owner: header.indexOf('owner'),
+    notes: header.indexOf('notes'),
+  };
+
+  const projects = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[idx.name] || !r[idx.name].trim()) continue;
+    const status = (idx.status >= 0 ? r[idx.status] : 'Active').trim() || 'Active';
+    if (status.toLowerCase() === 'archived') continue;
+    projects.push({
+      id: r[idx.name].trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      name: r[idx.name].trim(),
+      sheetId: r[idx.sheetId].trim(),
+      ganttGid: r[idx.gantt].trim(),
+      agentGid: idx.agent >= 0 ? r[idx.agent].trim() : '',
+      skillGid: idx.skill >= 0 ? r[idx.skill].trim() : '',
+      status,
+      owner: idx.owner >= 0 ? (r[idx.owner] || '').trim() : '',
+      notes: idx.notes >= 0 ? (r[idx.notes] || '').trim() : '',
+    });
+  }
+  return projects;
+}
+
+// ============================================================
+// AGENT / SKILL MASTER LIST (Column1, Column2 -> name, status)
+// ============================================================
+async function fetchStatusList(sheetId, gid) {
+  if (!gid) return new Map();
+  const rows = await fetchCSV(sheetId, gid);
+  const map = new Map();
+  for (let i = 1; i < rows.length; i++) {
+    const name = (rows[i][0] || '').trim();
+    const status = (rows[i][1] || '').trim().toUpperCase();
+    if (name) map.set(name, status === 'WIP' ? 'WIP' : 'TO DO');
+  }
+  return map;
+}
+
+// ============================================================
+// PROJECT GANTT PARSER
+// Columns A-I only: Phase, Task, Owner/PIC, AI Agent, Skill.md, Start, End, Progress, Status
+// ============================================================
+function parseGantt(rows) {
+  if (!rows.length) return { tasks: [], phaseOrder: [] };
+
+  // locate header row (first row containing "Phase" in col A, case-insens, possibly trimmed)
+  let headerRowIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 5); i++) {
+    const a = (rows[i][0] || '').trim().toLowerCase();
+    const b = (rows[i][1] || '').trim().toLowerCase();
+    if (a === 'phase' && b.includes('task')) { headerRowIdx = i; break; }
+  }
+  if (headerRowIdx === -1) headerRowIdx = 0; // fallback
+
+  const tasks = [];
+  const phaseOrder = [];
+  let currentPhase = '';
+  let rowCounter = 0;
+
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const phaseRaw = (r[0] || '').trim();
+    const taskName = (r[1] || '').trim();
+    const owner = (r[2] || '').trim();
+    const agentsRaw = (r[3] || '').trim();
+    const skillsRaw = (r[4] || '').trim();
+    const startRaw = (r[5] || '').trim();
+    const endRaw = (r[6] || '').trim();
+    const progressRaw = (r[7] || '').trim();
+    const statusRaw = (r[8] || '').trim();
+
+    // skip fully empty rows (phase separators)
+    if (!phaseRaw && !taskName && !owner && !startRaw && !endRaw && !statusRaw) continue;
+
+    if (phaseRaw) {
+      currentPhase = phaseRaw.trim();
+      if (!phaseOrder.includes(currentPhase)) phaseOrder.push(currentPhase);
+    }
+
+    if (!taskName) continue; // a row with only a phase label and nothing else
+
+    const start = parseFlexDate(startRaw);
+    const end = parseFlexDate(endRaw);
+    if (!start || !end) continue; // unparseable row, skip defensively
+
+    const progress = parsePercent(progressRaw);
+    const status = normalizeStatus(statusRaw);
+
+    rowCounter++;
+    tasks.push({
+      rowId: 'task_' + rowCounter,
+      phase: currentPhase || '(Unspecified)',
+      name: taskName,
+      owner,
+      agents: splitMultiValue(agentsRaw),
+      skills: splitMultiValue(skillsRaw),
+      start,
+      end,
+      durationDays: Math.max(1, (end - start) / 86400000),
+      progress,
+      rawStatus: status,
+      isMilestone: start.getTime() === end.getTime(),
+    });
+  }
+
+  if (!phaseOrder.length) phaseOrder.push('(Unspecified)');
+  return { tasks, phaseOrder };
+}
+
+// ============================================================
+// DERIVED STATUS (date-aware): Done / In Progress / To Do / At Risk / Delayed
+// ============================================================
+function deriveTaskStatus(task, today) {
+  const { progress, rawStatus, end } = task;
+  if (rawStatus === 'Done' && progress >= 100) return 'Done';
+  if (progress >= 100) return 'Done';
+
+  const endPassed = end.getTime() < today.getTime();
+  if (endPassed) {
+    return progress > 0 ? 'Delayed' : 'Delayed';
+  }
+  // not yet due
+  if (rawStatus === 'In Progress') return 'In Progress';
+  return rawStatus === 'To Do' ? 'To Do' : rawStatus;
+}
+
+function deriveMilestoneStatus(task, today) {
+  if (task.progress >= 100) return 'Done';
+  const endPassed = task.end.getTime() < today.getTime();
+  if (endPassed) return 'Delayed'; // overdue
+  return 'To Do'; // upcoming
+}
+
+// ============================================================
+// PROJECT-LEVEL AGGREGATION
+// ============================================================
+function computeProjectMetrics(tasks, today) {
+  const nonMilestoneTasks = tasks.filter(t => !t.isMilestone);
+  const base = nonMilestoneTasks.length ? nonMilestoneTasks : tasks;
+
+  let totalDuration = 0;
+  let weightedProgress = 0;
+  base.forEach(t => {
+    totalDuration += t.durationDays;
+    weightedProgress += t.durationDays * t.progress;
+  });
+  const overallProgress = totalDuration > 0 ? weightedProgress / totalDuration : 0;
+
+  const starts = tasks.map(t => t.start.getTime());
+  const ends = tasks.map(t => t.end.getTime());
+  const projectStart = new Date(Math.min(...starts));
+  const projectEnd = new Date(Math.max(...ends));
+
+  // delayed = any non-milestone task past due and not 100%
+  const delayedTasks = base.filter(t => {
+    const status = deriveTaskStatus(t, today);
+    return status === 'Delayed';
+  });
+
+  let health = 'On Track';
+  if (delayedTasks.length > 0) health = 'Delayed';
+  else {
+    // at risk: something ending within next 7 days but <80% progress
+    const soon = base.some(t => {
+      const daysLeft = (t.end - today) / 86400000;
+      return daysLeft >= 0 && daysLeft <= 7 && t.progress < 80;
+    });
+    if (soon) health = 'At Risk';
+  }
+
+  return {
+    overallProgress,
+    projectStart,
+    projectEnd,
+    delayedCount: delayedTasks.length,
+    health,
+  };
+}
+
+function computePhaseProgress(tasks, phaseOrder) {
+  return phaseOrder.map(phase => {
+    const phaseTasks = tasks.filter(t => t.phase === phase && !t.isMilestone);
+    const base = phaseTasks.length ? phaseTasks : tasks.filter(t => t.phase === phase);
+    let totalDuration = 0, weighted = 0;
+    base.forEach(t => { totalDuration += t.durationDays; weighted += t.durationDays * t.progress; });
+    const progress = totalDuration > 0 ? weighted / totalDuration : 0;
+    return { phase, progress, taskCount: base.length };
+  });
+}
+
+function extractMilestones(tasks) {
+  return tasks.filter(t => t.isMilestone).sort((a, b) => a.start - b.start);
+}
+
+function nextUpcomingMilestone(milestones, today) {
+  const upcoming = milestones.filter(m => m.start.getTime() >= today.getTime());
+  if (upcoming.length) return upcoming[0];
+  // if none upcoming, return the last one (already passed) so card still shows something
+  return milestones.length ? milestones[milestones.length - 1] : null;
+}
+
+// ============================================================
+// AGENT / SKILL COVERAGE (cross-reference task <-> agent/skill)
+// ============================================================
+function computeCoverage(tasks, statusMap, key) {
+  // key: 'agents' or 'skills'
+  const coverage = new Map();
+  tasks.forEach(t => {
+    t[key].forEach(name => {
+      if (!coverage.has(name)) {
+        coverage.set(name, { name, taskCount: 0, totalProgress: 0, status: statusMap.get(name) || 'TO DO' });
+      }
+      const c = coverage.get(name);
+      c.taskCount++;
+      c.totalProgress += t.progress;
+    });
+  });
+  return Array.from(coverage.values())
+    .map(c => ({ ...c, avgProgress: c.taskCount ? c.totalProgress / c.taskCount : 0 }))
+    .sort((a, b) => b.taskCount - a.taskCount);
+}
+
+// ============================================================
+// MAIN LOAD PIPELINE
+// ============================================================
+async function loadAllProjectData() {
+  const registry = await fetchRegistry();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const results = await Promise.all(registry.map(async (proj) => {
+    try {
+      const [ganttRows, agentMap, skillMap] = await Promise.all([
+        fetchCSV(proj.sheetId, proj.ganttGid),
+        fetchStatusList(proj.sheetId, proj.agentGid),
+        fetchStatusList(proj.sheetId, proj.skillGid),
+      ]);
+      const { tasks, phaseOrder } = parseGantt(ganttRows);
+      if (!tasks.length) {
+        return { ...proj, error: 'ไม่พบ task ที่อ่านได้ในชีต Project Gantt (ตรวจสอบ gid และ format วันที่)' };
+      }
+      const metrics = computeProjectMetrics(tasks, today);
+      const phaseProgress = computePhaseProgress(tasks, phaseOrder);
+      const milestones = extractMilestones(tasks);
+      const agentCoverage = computeCoverage(tasks, agentMap, 'agents');
+      const skillCoverage = computeCoverage(tasks, skillMap, 'skills');
+
+      return {
+        ...proj,
+        tasks, phaseOrder, metrics, phaseProgress, milestones,
+        agentMap, skillMap, agentCoverage, skillCoverage,
+        error: null,
+      };
+    } catch (e) {
+      return { ...proj, error: e.message || String(e) };
+    }
+  }));
+
+  return { projects: results, today };
+}
+
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let APP_STATE = {
+  projects: [],
+  today: new Date(),
+  currentProjectId: null,
+  filters: { agents: new Set(), skills: new Set(), phases: new Set() },
+};
+
+const fmtDate = d => d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtPct = n => `${Math.round(n)}%`;
+const esc = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function statusColor(status) {
+  return STATUS_COLORS[status] || STATUS_COLORS['To Do'];
+}
+function agentSkillColor(status) {
+  return AGENT_SKILL_STATUS_COLORS[status] || AGENT_SKILL_STATUS_COLORS['TO DO'];
+}
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+async function boot() {
+  document.getElementById('loadingScreen').style.display = 'flex';
+  document.getElementById('errorBanner').innerHTML = '';
+  try {
+    const { projects, today } = await loadAllProjectData();
+    APP_STATE.projects = projects;
+    APP_STATE.today = today;
+    document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    const failedProjects = projects.filter(p => p.error);
+    if (failedProjects.length) {
+      document.getElementById('errorBanner').innerHTML = failedProjects.map(p =>
+        `<div class="error-banner"><b>${esc(p.name)}</b> — โหลดข้อมูลไม่สำเร็จ: ${esc(p.error)}</div>`
+      ).join('');
+    }
+
+    renderPortfolio();
+    goPortfolio();
+  } catch (e) {
+    document.getElementById('errorBanner').innerHTML =
+      `<div class="error-banner"><b>โหลด Registry ไม่สำเร็จ</b> — ${esc(e.message || String(e))}. ตรวจสอบว่าไฟล์ Registry เปิด sharing เป็น "Anyone with the link – Viewer"</div>`;
+  } finally {
+    document.getElementById('loadingScreen').style.display = 'none';
+  }
+}
+
+window.dashboardRefresh = async function () {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  await boot();
+  if (APP_STATE.currentProjectId) {
+    const p = APP_STATE.projects.find(p => p.id === APP_STATE.currentProjectId);
+    if (p && !p.error) renderDetail(p.id);
+    else goPortfolio();
+  }
+  btn.classList.remove('spinning');
+};
+
+window.dashboardGoPortfolio = goPortfolio;
+
+function goPortfolio() {
+  APP_STATE.currentProjectId = null;
+  document.getElementById('view-portfolio').classList.add('active');
+  document.getElementById('view-detail').classList.remove('active');
+  document.getElementById('crumbBar').innerHTML = `<button onclick="window.dashboardGoPortfolio()">Portfolio</button>`;
+}
+
+function goDetail(projectId) {
+  APP_STATE.currentProjectId = projectId;
+  APP_STATE.filters = { agents: new Set(), skills: new Set(), phases: new Set() };
+  const proj = APP_STATE.projects.find(p => p.id === projectId);
+  document.getElementById('view-portfolio').classList.remove('active');
+  document.getElementById('view-detail').classList.add('active');
+  document.getElementById('crumbBar').innerHTML = `
+    <button onclick="window.dashboardGoPortfolio()">Portfolio</button>
+    <span class="sep">/</span>
+    <span class="current">${esc(proj.name)}</span>
+  `;
+  renderDetail(projectId);
+}
+
+// ============================================================
+// PORTFOLIO VIEW
+// ============================================================
+function renderPortfolio() {
+  const validProjects = APP_STATE.projects.filter(p => !p.error);
+  const root = document.getElementById('view-portfolio');
+
+  if (!validProjects.length) {
+    root.innerHTML = `<div class="table-empty-state">ไม่มีโปรเจคที่โหลดสำเร็จ</div>`;
+    return;
+  }
+
+  // ---- summary strip ----
+  let totalDuration = 0, weightedProgress = 0, delayedProjects = 0;
+  validProjects.forEach(p => {
+    const w = p.metrics.projectEnd - p.metrics.projectStart;
+    totalDuration += w;
+    weightedProgress += w * p.metrics.overallProgress;
+    if (p.metrics.health === 'Delayed') delayedProjects++;
+  });
+  const portfolioProgress = totalDuration > 0 ? weightedProgress / totalDuration : 0;
+  const nextGoLive = validProjects
+    .map(p => ({ name: p.name, end: p.metrics.projectEnd }))
+    .sort((a, b) => a.end - b.end)
+    .find(p => p.end >= APP_STATE.today);
+
+  const summaryHTML = `
+    <div class="portfolio-summary">
+      <div class="ps-block">
+        <div class="ps-label">Portfolio Progress</div>
+        <div class="ps-value">${fmtPct(portfolioProgress)}</div>
+        <div class="ps-progress-track"><div class="ps-progress-fill" style="width:${portfolioProgress}%"></div></div>
+      </div>
+      <div class="ps-block">
+        <div class="ps-label">Active Projects</div>
+        <div class="ps-value">${validProjects.length}</div>
+        <div class="ps-sub">${APP_STATE.projects.length - validProjects.length ? (APP_STATE.projects.length - validProjects.length) + ' load error' : 'all loaded'}</div>
+      </div>
+      <div class="ps-block">
+        <div class="ps-label">Needs Attention</div>
+        <div class="ps-value" style="color:${delayedProjects ? 'var(--status-delayed)' : 'var(--text)'}">${delayedProjects}</div>
+        <div class="ps-sub">project${delayedProjects===1?'':'s'} delayed</div>
+      </div>
+      <div class="ps-block">
+        <div class="ps-label">Next Go-Live</div>
+        <div class="ps-value" style="font-size:16px;">${nextGoLive ? esc(nextGoLive.name) : '—'}</div>
+        <div class="ps-sub">${nextGoLive ? fmtDate(nextGoLive.end) : ''}</div>
+      </div>
+      <div class="ps-block">
+        <div class="ps-label">Total Tasks</div>
+        <div class="ps-value">${validProjects.reduce((s,p)=>s+p.tasks.length,0)}</div>
+        <div class="ps-sub">across all projects</div>
+      </div>
+    </div>
+  `;
+
+  const cardsHTML = validProjects.map(p => projectCardHTML(p)).join('');
+
+  root.innerHTML = `
+    ${summaryHTML}
+    <div class="section-label">Projects</div>
+    <div class="project-grid">${cardsHTML}</div>
+  `;
+}
+
+function healthDotColor(health) {
+  if (health === 'On Track') return 'var(--status-done)';
+  if (health === 'At Risk') return 'var(--status-risk)';
+  return 'var(--status-delayed)';
+}
+function healthPillColors(health) {
+  if (health === 'On Track') return STATUS_COLORS['Done'];
+  if (health === 'At Risk') return STATUS_COLORS['At Risk'];
+  return STATUS_COLORS['Delayed'];
+}
+
+function projectCardHTML(p) {
+  const milestone = nextUpcomingMilestone(p.milestones, APP_STATE.today);
+  const healthC = healthPillColors(p.metrics.health);
+  const progress = p.metrics.overallProgress;
+  const progressColor = progress >= 70 ? 'var(--status-done)' : progress >= 35 ? 'var(--status-progress)' : 'var(--status-todo)';
+
+  return `
+    <div class="project-card" onclick="goDetail('${p.id}')">
+      ${p.metrics.delayedCount > 0 ? `<div class="pc-warn-badge">${p.metrics.delayedCount} DELAYED</div>` : ''}
+      <div class="pc-top">
+        <div>
+          <h3>${esc(p.name)}</h3>
+          <div class="pc-owner">${p.owner ? 'Owner: ' + esc(p.owner) : '&nbsp;'}</div>
+        </div>
+        <span class="status-pill" style="color:${healthC.fg}; background:${healthC.bg}">
+          <span class="health-dot" style="background:${healthC.fg}"></span>${p.metrics.health}
+        </span>
+      </div>
+      <div class="pc-progress-row">
+        <div class="pc-progress-track"><div class="pc-progress-fill" style="width:${progress}%; background:${progressColor}"></div></div>
+        <div class="pc-progress-pct">${fmtPct(progress)}</div>
+      </div>
+      <div class="pc-meta">
+        <div class="pc-meta-item">
+          <div class="pc-meta-label">Start</div>
+          <div class="pc-meta-value">${fmtDate(p.metrics.projectStart)}</div>
+        </div>
+        <div class="pc-meta-item">
+          <div class="pc-meta-label">Go-Live</div>
+          <div class="pc-meta-value">${fmtDate(p.metrics.projectEnd)}</div>
+        </div>
+      </div>
+      ${milestone ? `
+        <div class="pc-next-milestone">
+          <span class="nm-label">Next milestone</span>
+          <span class="nm-name">${esc(milestone.name)} · ${fmtDate(milestone.start)}</span>
+        </div>` : ''}
+    </div>
+  `;
+}
+
+// ============================================================
+// PROJECT DETAIL VIEW
+// ============================================================
+function renderDetail(projectId) {
+  const p = APP_STATE.projects.find(pr => pr.id === projectId);
+  const root = document.getElementById('view-detail');
+  if (!p || p.error) {
+    root.innerHTML = `<div class="error-banner">ไม่สามารถแสดงโปรเจคนี้ได้</div>`;
+    return;
+  }
+
+  root.innerHTML = `
+    ${detailHeaderHTML(p)}
+    ${phaseProgressPanelHTML(p)}
+    ${ganttPanelHTML(p)}
+    ${milestonesPanelHTML(p)}
+    ${taskTablePanelHTML(p)}
+    ${coveragePanelHTML(p)}
+  `;
+
+  initGanttCanvas(p);
+  initFilters(p);
+  renderTaskTable(p);
+  initCoverageDonuts(p);
+}
+
+function detailHeaderHTML(p) {
+  const weeks = Math.round((p.metrics.projectEnd - p.metrics.projectStart) / (7 * 86400000));
+  const healthC = healthPillColors(p.metrics.health);
+
+  return `
+    <div class="detail-header">
+      <div class="dh-top">
+        <div class="dh-title">
+          <h2>${esc(p.name)}</h2>
+          <div class="dh-owner">${p.owner ? 'Owner: ' + esc(p.owner) : ''}</div>
+        </div>
+        <span class="status-pill" style="color:${healthC.fg}; background:${healthC.bg}; font-size:12px; padding:6px 14px;">
+          <span class="health-dot" style="background:${healthC.fg}"></span>${p.metrics.health}
+        </span>
+      </div>
+      <div class="dh-kpis">
+        <div class="dh-kpi">
+          <div class="k-label">Start</div>
+          <div class="k-value">${fmtDate(p.metrics.projectStart)}</div>
+        </div>
+        <div class="dh-kpi">
+          <div class="k-label">Go-Live (Gantt)</div>
+          <div class="k-value">${fmtDate(p.metrics.projectEnd)}</div>
+        </div>
+        <div class="dh-kpi">
+          <div class="k-label">Duration</div>
+          <div class="k-value">${weeks} weeks</div>
+        </div>
+        <div class="dh-kpi">
+          <div class="k-label">Overall Progress</div>
+          <div class="k-value">${fmtPct(p.metrics.overallProgress)}</div>
+        </div>
+        <div class="dh-kpi">
+          <div class="k-label">Tasks Delayed</div>
+          <div class="k-value" style="color:${p.metrics.delayedCount ? 'var(--status-delayed)' : 'var(--text)'}">${p.metrics.delayedCount}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function phaseProgressPanelHTML(p) {
+  const rows = p.phaseProgress.map(ph => {
+    const color = ph.progress >= 100 ? 'var(--status-done)' : ph.progress > 0 ? 'var(--status-progress)' : 'var(--status-todo)';
+    return `
+      <div class="phase-row">
+        <div class="phase-name" title="${esc(ph.phase)}">${esc(ph.phase)}</div>
+        <div class="phase-track"><div class="phase-fill" style="width:${ph.progress}%; background:${color}"></div></div>
+        <div class="phase-pct">${fmtPct(ph.progress)}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="panel">
+      <h3>Progress by Phase <span class="ph-count">${p.phaseProgress.length} phases</span></h3>
+      ${rows}
+    </div>
+  `;
+}
+
+// ---------------- GANTT (Canvas) ----------------
+function ganttPanelHTML(p) {
+  return `
+    <div class="panel">
+      <h3>Gantt Timeline <span class="ph-count">${p.tasks.length} tasks</span></h3>
+      <div class="gantt-legend">
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['Done'].fg}"></span>Done</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['In Progress'].fg}"></span>In Progress</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['To Do'].fg}"></span>To Do</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['Delayed'].fg}"></span>Delayed</span>
+        <span><span class="legend-dot" style="background:${STATUS_COLORS['At Risk'].fg}"></span>At Risk</span>
+        <span style="margin-left:auto; color:var(--text-faint);">▾ milestone &nbsp; | &nbsp; today line</span>
+      </div>
+      <div class="gantt-wrap">
+        <canvas id="ganttCanvas-${p.id}"></canvas>
+      </div>
+    </div>
+  `;
+}
+
+function colorForGanttTask(task, today) {
+  if (task.progress >= 100) return STATUS_COLORS['Done'].fg;
+  const endPassed = task.end.getTime() < today.getTime();
+  if (endPassed) return STATUS_COLORS['Delayed'].fg;
+  const daysLeft = (task.end - today) / 86400000;
+  if (daysLeft >= 0 && daysLeft <= 7 && task.progress < 80) return STATUS_COLORS['At Risk'].fg;
+  if (task.progress > 0) return STATUS_COLORS['In Progress'].fg;
+  return STATUS_COLORS['To Do'].fg;
+}
+
+function resolveCSSVar(varExpr) {
+  // varExpr like "var(--status-done)" -> resolve to actual hex via computed style
+  const m = varExpr.match(/var\((--[\w-]+)\)/);
+  if (!m) return varExpr;
+  return getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim();
+}
+
+function initGanttCanvas(p) {
+  const canvas = document.getElementById(`ganttCanvas-${p.id}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const milestones = p.milestones;
+  const rowTasks = p.tasks; // includes milestones as zero-width markers handled separately
+  const timelineTasks = rowTasks.filter(t => !t.isMilestone);
+  const dataForRows = timelineTasks.length ? timelineTasks : rowTasks;
+
+  // group by phase, preserve order
+  const phaseGroups = [];
+  p.phaseOrder.forEach(phase => {
+    const items = dataForRows.filter(t => t.phase === phase);
+    if (items.length) phaseGroups.push({ phase, items });
+  });
+
+  const rowH = 26;
+  const headerH = 36;
+  const leftLabelW = 230;
+  const dayW = 9; // px per day, will scale down if too wide
+
+  const allDates = rowTasks.flatMap(t => [t.start, t.end]).concat(milestones.flatMap(m => [m.start]));
+  const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+  const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+  const totalDays = Math.max(1, (maxDate - minDate) / 86400000);
+
+  let chartW = totalDays * dayW;
+  const maxChartW = 2600;
+  let effectiveDayW = dayW;
+  if (chartW > maxChartW) {
+    effectiveDayW = maxChartW / totalDays;
+    chartW = maxChartW;
+  }
+
+  const totalRows = phaseGroups.reduce((s, g) => s + g.items.length + 1, 0); // +1 for phase header row
+  const width = leftLabelW + chartW + 40;
+  const height = headerH + totalRows * rowH + 20;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  ctx.scale(dpr, dpr);
+
+  const css = {
+    border: resolveCSSVar('var(--border-soft)'),
+    text: resolveCSSVar('var(--text)'),
+    textDim: resolveCSSVar('var(--text-dim)'),
+    textFaint: resolveCSSVar('var(--text-faint)'),
+    bgElev: resolveCSSVar('var(--bg-elev)'),
+    accent: resolveCSSVar('var(--accent)'),
+  };
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.font = '11px Inter, system-ui, sans-serif';
+
+  const xForDate = (d) => leftLabelW + ((d - minDate) / 86400000) * effectiveDayW;
+
+  // week grid lines + month labels
+  ctx.strokeStyle = css.border;
+  ctx.lineWidth = 1;
+  let cursor = new Date(minDate);
+  cursor.setDate(cursor.getDate() - cursor.getDay() + 1); // align to Monday
+  let lastMonth = -1;
+  while (cursor <= maxDate) {
+    const x = xForDate(cursor);
+    ctx.beginPath();
+    ctx.moveTo(x, headerH);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+    if (cursor.getMonth() !== lastMonth) {
+      ctx.fillStyle = css.textDim;
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      ctx.fillText(cursor.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }), x + 4, 16);
+      lastMonth = cursor.getMonth();
+    } else {
+      ctx.fillStyle = css.textFaint;
+      ctx.font = '9.5px Inter, system-ui, sans-serif';
+      ctx.fillText(cursor.getDate().toString(), x + 3, 30);
+    }
+    cursor.setDate(cursor.getDate() + 7);
+  }
+
+  // header bottom border
+  ctx.strokeStyle = css.border;
+  ctx.beginPath(); ctx.moveTo(0, headerH); ctx.lineTo(width, headerH); ctx.stroke();
+
+  // today line
+  const today = APP_STATE.today;
+  if (today >= minDate && today <= maxDate) {
+    const tx = xForDate(today);
+    ctx.strokeStyle = css.accent;
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(tx, headerH); ctx.lineTo(tx, height); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = css.accent;
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillText('Today', tx + 4, headerH + 12);
+  }
+
+  // rows
+  let y = headerH + 6;
+  const hitboxes = []; // for tooltip
+
+  phaseGroups.forEach(group => {
+    // phase header row
+    ctx.fillStyle = css.bgElev;
+    ctx.fillRect(0, y, width, rowH - 4);
+    ctx.fillStyle = css.text;
+    ctx.font = '600 11px Inter, system-ui, sans-serif';
+    ctx.fillText(group.phase, 10, y + (rowH - 4) / 2 + 4);
+    y += rowH;
+
+    group.items.forEach(task => {
+      const barX = xForDate(task.start);
+      const barW = Math.max(3, xForDate(task.end) - barX);
+      const barY = y + 4;
+      const barH = rowH - 12;
+      const color = colorForGanttTask(task, today);
+
+      // task label (left side, truncated)
+      ctx.fillStyle = css.textDim;
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      let label = task.name;
+      const maxChars = 32;
+      if (label.length > maxChars) label = label.slice(0, maxChars - 1) + '…';
+      ctx.fillText(label, 10, y + rowH / 2 + 4);
+
+      // bar background (track)
+      ctx.fillStyle = css.bgElev;
+      roundRect(ctx, barX, barY, barW, barH, 4);
+      ctx.fill();
+
+      // progress fill
+      const fillW = Math.max(0, barW * (task.progress / 100));
+      ctx.fillStyle = color;
+      roundRect(ctx, barX, barY, Math.max(fillW, task.progress > 0 ? 3 : 0), barH, 4);
+      ctx.fill();
+
+      // bar outline
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      roundRect(ctx, barX, barY, barW, barH, 4);
+      ctx.stroke();
+
+      hitboxes.push({ x: barX, y: barY, w: barW, h: barH, task });
+      y += rowH;
+    });
+  });
+
+  // milestone markers (drawn on top, across full chart at their date)
+  milestones.forEach(m => {
+    const mx = xForDate(m.start);
+    const mStatus = deriveMilestoneStatus(m, today);
+    const color = mStatus === 'Done' ? STATUS_COLORS['Done'].fg : mStatus === 'Delayed' ? STATUS_COLORS['Delayed'].fg : css.accent;
+    ctx.fillStyle = resolveCSSVar(color.includes('var') ? color : color);
+    ctx.strokeStyle = '#0a0e18';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mx, headerH + 2);
+    ctx.lineTo(mx - 6, headerH + 12);
+    ctx.lineTo(mx + 6, headerH + 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    hitboxes.push({ x: mx - 6, y: headerH + 2, w: 12, h: 10, task: m, isMilestoneMarker: true });
+  });
+
+  // tooltip interaction
+  const tooltip = document.getElementById('tooltip');
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const hit = hitboxes.find(h => mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h);
+    if (hit) {
+      const t = hit.task;
+      const statusLabel = hit.isMilestoneMarker ? deriveMilestoneStatus(t, today) : deriveTaskStatus(t, today);
+      tooltip.innerHTML = `
+        <b>${esc(t.name)}</b><br>
+        ${esc(t.phase)}<br>
+        ${fmtDate(t.start)} → ${fmtDate(t.end)}<br>
+        Progress: ${fmtPct(t.progress)} · ${esc(statusLabel)}
+        ${t.owner ? '<br>PIC: ' + esc(t.owner) : ''}
+        ${t.agents && t.agents.length ? '<br>Agent: ' + t.agents.map(esc).join(', ') : ''}
+        ${t.skills && t.skills.length ? '<br>Skill: ' + t.skills.map(esc).join(', ') : ''}
+      `;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+      canvas.style.cursor = 'pointer';
+    } else {
+      tooltip.style.display = 'none';
+      canvas.style.cursor = 'default';
+    }
+  };
+  canvas.onmouseleave = () => { tooltip.style.display = 'none'; };
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  r = Math.max(0, r);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// ---------------- MILESTONES ----------------
+function milestonesPanelHTML(p) {
+  if (!p.milestones.length) {
+    return `<div class="panel"><h3>Milestones</h3><div class="table-empty-state">ไม่พบ milestone (ไม่มี task ที่ Start = End)</div></div>`;
+  }
+  const today = APP_STATE.today;
+  const cards = p.milestones.map(m => {
+    const status = deriveMilestoneStatus(m, today);
+    const c = statusColor(status === 'Done' ? 'Done' : status === 'Delayed' ? 'Delayed' : 'To Do');
+    return `
+      <div class="ms-card">
+        <span class="ms-status-dot" style="background:${c.fg}"></span>
+        <span class="ms-phase-tag">${esc(m.phase)}</span>
+        <div class="ms-name">${esc(m.name)}</div>
+        <div class="ms-date">${fmtDate(m.start)}</div>
+        ${m.owner ? `<div class="ms-owner">${esc(m.owner)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+  return `
+    <div class="panel">
+      <h3>Milestones <span class="ph-count">${p.milestones.length} milestones · derived from tasks where Start = End</span></h3>
+      <div class="ms-scroll"><div class="ms-row">${cards}</div></div>
+    </div>
+  `;
+}
+
+// ---------------- TASK TABLE + FILTERS ----------------
+function taskTablePanelHTML(p) {
+  return `
+    <div class="panel">
+      <h3>Task Detail <span class="ph-count" id="taskCountLabel-${p.id}"></span></h3>
+      <div class="filter-bar" id="filterBar-${p.id}"></div>
+      <div class="task-table-wrap">
+        <table class="task-table">
+          <thead>
+            <tr>
+              <th>Phase</th><th>Task</th><th>PIC</th><th>Start</th><th>End</th>
+              <th>Progress</th><th>Status</th><th>AI Agent</th><th>Skill.md</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody-${p.id}"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function uniqueSorted(arr) {
+  return Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
+}
+
+function initFilters(p) {
+  const allAgents = uniqueSorted(p.tasks.flatMap(t => t.agents));
+  const allSkills = uniqueSorted(p.tasks.flatMap(t => t.skills));
+  const allPhases = p.phaseOrder;
+
+  const bar = document.getElementById(`filterBar-${p.id}`);
+  bar.innerHTML = `
+    ${filterDropdownHTML('phases', 'Phase', allPhases, p.id)}
+    ${filterDropdownHTML('agents', 'AI Agent', allAgents, p.id)}
+    ${filterDropdownHTML('skills', 'Skill.md', allSkills, p.id)}
+    <span class="filter-clear" id="filterClear-${p.id}" style="display:none" onclick="clearAllFilters('${p.id}')">Clear filters ✕</span>
+  `;
+
+  // close dropdowns on outside click
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.filter-dropdown.open').forEach(dd => {
+      if (!dd.parentElement.contains(e.target)) dd.classList.remove('open');
+    });
+  });
+}
+
+function filterDropdownHTML(key, label, options, projectId) {
+  if (!options.length) return '';
+  const optsHTML = options.map(opt => `
+    <label class="filter-opt">
+      <input type="checkbox" value="${esc(opt)}" onchange="toggleFilter('${projectId}','${key}', this.value, this.checked)">
+      <span>${esc(opt)}</span>
+    </label>
+  `).join('');
+  return `
+    <div class="filter-select">
+      <button class="filter-btn" id="filterBtn-${key}-${projectId}" onclick="toggleDropdown('${key}','${projectId}')">
+        ${esc(label)} <span id="filterBadge-${key}-${projectId}"></span>
+      </button>
+      <div class="filter-dropdown" id="filterDropdown-${key}-${projectId}">${optsHTML}</div>
+    </div>
+  `;
+}
+
+window.toggleDropdown = function (key, projectId) {
+  document.querySelectorAll('.filter-dropdown.open').forEach(dd => {
+    if (dd.id !== `filterDropdown-${key}-${projectId}`) dd.classList.remove('open');
+  });
+  document.getElementById(`filterDropdown-${key}-${projectId}`).classList.toggle('open');
+};
+
+window.toggleFilter = function (projectId, key, value, checked) {
+  const set = APP_STATE.filters[key];
+  if (checked) set.add(value); else set.delete(value);
+  updateFilterUI(projectId, key);
+  renderTaskTable(APP_STATE.projects.find(p => p.id === projectId));
+};
+
+function updateFilterUI(projectId, key) {
+  const set = APP_STATE.filters[key];
+  const btn = document.getElementById(`filterBtn-${key}-${projectId}`);
+  const badge = document.getElementById(`filterBadge-${key}-${projectId}`);
+  if (set.size) {
+    btn.classList.add('has-value');
+    badge.innerHTML = `<span class="filter-badge">${set.size}</span>`;
+  } else {
+    btn.classList.remove('has-value');
+    badge.innerHTML = '';
+  }
+  const anyActive = ['agents', 'skills', 'phases'].some(k => APP_STATE.filters[k].size);
+  const clearBtn = document.getElementById(`filterClear-${projectId}`);
+  if (clearBtn) clearBtn.style.display = anyActive ? 'flex' : 'none';
+}
+
+window.clearAllFilters = function (projectId) {
+  APP_STATE.filters = { agents: new Set(), skills: new Set(), phases: new Set() };
+  ['agents', 'skills', 'phases'].forEach(k => {
+    document.querySelectorAll(`#filterDropdown-${k}-${projectId} input`).forEach(cb => cb.checked = false);
+    updateFilterUI(projectId, k);
+  });
+  renderTaskTable(APP_STATE.projects.find(p => p.id === projectId));
+};
+
+function renderTaskTable(p) {
+  const { agents, skills, phases } = APP_STATE.filters;
+  const today = APP_STATE.today;
+
+  let filtered = p.tasks.filter(t => !t.isMilestone || true); // show milestones too, marked distinctly
+  if (phases.size) filtered = filtered.filter(t => phases.has(t.phase));
+  if (agents.size) filtered = filtered.filter(t => t.agents.some(a => agents.has(a)));
+  if (skills.size) filtered = filtered.filter(t => t.skills.some(s => skills.has(s)));
+
+  const tbody = document.getElementById(`taskTableBody-${p.id}`);
+  const countLabel = document.getElementById(`taskCountLabel-${p.id}`);
+  countLabel.textContent = `${filtered.length} of ${p.tasks.length} tasks`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="table-empty-state">ไม่พบ task ที่ตรงกับ filter</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(t => {
+    const status = t.isMilestone ? deriveMilestoneStatus(t, today) : deriveTaskStatus(t, today);
+    const sc = statusColor(status);
+    const progColor = t.progress >= 100 ? 'var(--status-done)' : t.progress > 0 ? 'var(--status-progress)' : 'var(--status-todo)';
+
+    const agentChips = t.agents.length
+      ? t.agents.map(a => {
+          const st = p.agentMap.get(a) || 'TO DO';
+          const c = agentSkillColor(st);
+          return `<span class="chip" style="color:${c.fg}; background:${c.bg}; border-color:${c.fg}33">${esc(a)}</span>`;
+        }).join('')
+      : `<span class="chip-empty">—</span>`;
+
+    const skillChips = t.skills.length
+      ? t.skills.map(s => {
+          const st = p.skillMap.get(s) || 'TO DO';
+          const c = agentSkillColor(st);
+          return `<span class="chip" style="color:${c.fg}; background:${c.bg}; border-color:${c.fg}33">${esc(s)}</span>`;
+        }).join('')
+      : `<span class="chip-empty">—</span>`;
+
+    return `
+      <tr>
+        <td style="color:var(--text-dim); font-size:11.5px;">${esc(t.phase)}</td>
+        <td style="font-weight:500;">${t.isMilestone ? '◆ ' : ''}${esc(t.name)}</td>
+        <td style="color:var(--text-dim);">${esc(t.owner) || '—'}</td>
+        <td style="white-space:nowrap; color:var(--text-dim);">${fmtDate(t.start)}</td>
+        <td style="white-space:nowrap; color:var(--text-dim);">${fmtDate(t.end)}</td>
+        <td style="white-space:nowrap;">
+          <span class="td-progress-track"><span class="td-progress-fill" style="width:${t.progress}%; background:${progColor}"></span></span>
+          <span style="font-family:var(--font-mono); font-size:11.5px;">${fmtPct(t.progress)}</span>
+        </td>
+        <td><span class="status-pill" style="color:${sc.fg}; background:${sc.bg}; font-size:10.5px; padding:3px 9px;">${esc(status)}</span></td>
+        <td><div class="chip-group">${agentChips}</div></td>
+        <td><div class="chip-group">${skillChips}</div></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ---------------- AGENT / SKILL COVERAGE ----------------
+function coveragePanelHTML(p) {
+  return `
+    <div class="panel">
+      <h3>Agent &amp; Skill Coverage</h3>
+      <div class="coverage-grid">
+        <div>
+          <div class="section-label" style="margin-top:0;">AI Agents (${p.agentCoverage.length} used in this project)</div>
+          <div id="agentDonut-${p.id}"></div>
+          <div class="coverage-list" style="margin-top:14px;">
+            ${p.agentCoverage.map(c => coverageItemHTML(c)).join('') || '<div class="table-empty-state">ไม่มี Agent ที่ผูกกับ task</div>'}
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-top:0;">Skills (${p.skillCoverage.length} used in this project)</div>
+          <div id="skillDonut-${p.id}"></div>
+          <div class="coverage-list" style="margin-top:14px;">
+            ${p.skillCoverage.map(c => coverageItemHTML(c)).join('') || '<div class="table-empty-state">ไม่มี Skill ที่ผูกกับ task</div>'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function coverageItemHTML(c) {
+  const sc = agentSkillColor(c.status);
+  return `
+    <div class="coverage-item">
+      <div class="ci-left">
+        <span class="coverage-status-dot" style="background:${sc.fg}"></span>
+        <span class="ci-name" title="${esc(c.name)}">${esc(c.name)}</span>
+      </div>
+      <span class="ci-count">${c.taskCount} task${c.taskCount===1?'':'s'} · avg ${fmtPct(c.avgProgress)}</span>
+    </div>
+  `;
+}
+
+function initCoverageDonuts(p) {
+  renderDonut(`agentDonut-${p.id}`, p.agentMap);
+  renderDonut(`skillDonut-${p.id}`, p.skillMap);
+}
+
+function renderDonut(containerId, statusMap) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const wip = Array.from(statusMap.values()).filter(v => v === 'WIP').length;
+  const todo = Array.from(statusMap.values()).filter(v => v === 'TO DO').length;
+  const total = wip + todo;
+  if (!total) { container.innerHTML = ''; return; }
+
+  const r = 46, cx = 56, cy = 56, sw = 16;
+  const circumference = 2 * Math.PI * r;
+  const wipLen = (wip / total) * circumference;
+  const wipColor = resolveCSSVar('var(--status-progress)');
+  const todoColor = resolveCSSVar('var(--status-todo)');
+
+  container.innerHTML = `
+    <div class="donut-wrap">
+      <svg width="112" height="112" viewBox="0 0 112 112">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${todoColor}" stroke-width="${sw}" />
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${wipColor}" stroke-width="${sw}"
+          stroke-dasharray="${wipLen} ${circumference - wipLen}" stroke-dashoffset="${circumference * 0.25}"
+          transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round" />
+        <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-family="Sora, sans-serif" font-size="20" font-weight="600" fill="${resolveCSSVar('var(--text)')}">${total}</text>
+        <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="${resolveCSSVar('var(--text-faint)')}">total</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="donut-legend-item"><span class="dl-dot" style="background:${wipColor}"></span>WIP <span class="dl-count">${wip}</span></div>
+        <div class="donut-legend-item"><span class="dl-dot" style="background:${todoColor}"></span>To Do <span class="dl-count">${todo}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+boot();
+
+</script>
+</body>
+</html>
