@@ -847,7 +847,7 @@ function goPortfolio() {
 
 function goDetail(projectId) {
   APP_STATE.currentProjectId = projectId;
-  APP_STATE.filters = { agents: new Set(), skills: new Set(), phases: new Set() };
+  APP_STATE.filters = { phases: new Set(), statuses: new Set() };
   const proj = APP_STATE.projects.find(p => p.id === projectId);
   document.getElementById('view-portfolio').classList.remove('active');
   document.getElementById('view-detail').classList.add('active');
