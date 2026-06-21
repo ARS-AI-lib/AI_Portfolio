@@ -3,31 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gen AI SDLC Portfolio Dashboard</title>
+<title>AI Project Timeline</title>
 <style>
   :root{
-    --bg:#0f1420;
-    --bg-elev:#161d2e;
-    --bg-card:#1a2236;
-    --bg-card-hover:#1f2a42;
-    --border:#2a3450;
-    --border-soft:#222b42;
-    --text:#e8ecf6;
-    --text-dim:#9aa6c4;
-    --text-faint:#5d6889;
-    --accent:#5b8def;
-    --accent-soft:rgba(91,141,239,.14);
+    --bg:#f4f6fb;
+    --bg-elev:#eef1f8;
+    --bg-card:#ffffff;
+    --bg-card-hover:#f8faff;
+    --border:#dde3f0;
+    --border-soft:#e6eaf4;
+    --text:#1a2138;
+    --text-dim:#5b6680;
+    --text-faint:#94a0bd;
+    --accent:#3b6fe0;
+    --accent-soft:rgba(59,111,224,.10);
 
-    --status-done:#3ec98a;
-    --status-done-bg:rgba(62,201,138,.14);
-    --status-progress:#f0a23a;
-    --status-progress-bg:rgba(240,162,58,.14);
-    --status-todo:#5d6889;
-    --status-todo-bg:rgba(93,104,137,.16);
-    --status-risk:#f0c93a;
-    --status-risk-bg:rgba(240,201,58,.14);
-    --status-delayed:#e25c5c;
-    --status-delayed-bg:rgba(226,92,92,.14);
+    --status-done:#2f7de0;
+    --status-done-bg:rgba(47,125,224,.12);
+    --status-progress:#1fa971;
+    --status-progress-bg:rgba(31,169,113,.12);
+    --status-todo:#8993ab;
+    --status-todo-bg:rgba(137,147,171,.14);
+    --status-risk:#e0a82f;
+    --status-risk-bg:rgba(224,168,47,.14);
+    --status-delayed:#e0473b;
+    --status-delayed-bg:rgba(224,71,59,.12);
 
     --radius-sm:8px;
     --radius-md:12px;
@@ -40,7 +40,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:radial-gradient(ellipse 1200px 600px at 50% -10%, #1c2942 0%, var(--bg) 55%);
+    background:radial-gradient(ellipse 1200px 600px at 50% -10%, #eef3ff 0%, var(--bg) 55%);
     color:var(--text);
     font-family:var(--font-body);
     font-size:14px;
@@ -122,6 +122,7 @@
     background:var(--bg-card); border:1px solid var(--border-soft);
     border-radius:var(--radius-lg); padding:22px 26px; margin-bottom:24px;
     display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:28px; align-items:center;
+    box-shadow:0 1px 3px rgba(30,45,90,.04);
   }
   @media (max-width:900px){.portfolio-summary{grid-template-columns:1fr 1fr; row-gap:18px;}}
   .ps-block .ps-label{font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
@@ -130,7 +131,7 @@
   .ps-progress-track{
     height:8px; border-radius:5px; background:var(--bg-elev); overflow:hidden; margin-top:10px;
   }
-  .ps-progress-fill{height:100%; border-radius:5px; background:linear-gradient(90deg,#5b8def,#7c5cf0);}
+  .ps-progress-fill{height:100%; border-radius:5px;}
 
   .health-dot{display:inline-block; width:8px;height:8px;border-radius:50%; margin-right:6px;}
 
@@ -143,8 +144,9 @@
   .project-card{
     background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
     padding:20px; cursor:pointer; transition:.15s; position:relative; overflow:hidden;
+    box-shadow:0 1px 3px rgba(30,45,90,.04);
   }
-  .project-card:hover{background:var(--bg-card-hover); border-color:var(--accent); transform:translateY(-1px);}
+  .project-card:hover{background:var(--bg-card-hover); border-color:var(--accent); transform:translateY(-1px); box-shadow:0 4px 14px rgba(30,45,90,.08);}
   .project-card .pc-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:10px;}
   .project-card h3{font-family:var(--font-display); font-size:16px; font-weight:600; margin:0 0 4px; letter-spacing:-.01em;}
   .project-card .pc-owner{font-size:12px; color:var(--text-faint);}
@@ -159,21 +161,11 @@
   .pc-meta{display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px;}
   .pc-meta-item .pc-meta-label{color:var(--text-faint); margin-bottom:2px; font-size:11px;}
   .pc-meta-item .pc-meta-value{color:var(--text); font-weight:500;}
-  .pc-next-milestone{
-    margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);
-    font-size:12px; display:flex; justify-content:space-between; align-items:center;
-  }
-  .pc-next-milestone .nm-label{color:var(--text-faint);}
-  .pc-next-milestone .nm-name{color:var(--text); font-weight:500;}
-  .pc-warn-badge{
-    position:absolute; top:0; right:0; background:var(--status-delayed);
-    color:#fff; font-size:10px; font-weight:700; padding:3px 9px; border-radius:0 var(--radius-lg) 0 8px;
-  }
 
   /* ---------- Detail header ---------- */
   .detail-header{
     background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
-    padding:24px 26px; margin-bottom:22px;
+    padding:24px 26px; margin-bottom:22px; box-shadow:0 1px 3px rgba(30,45,90,.04);
   }
   .dh-top{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:18px;}
   .dh-title h2{font-family:var(--font-display); font-size:22px; font-weight:600; margin:0 0 4px; letter-spacing:-.01em;}
@@ -191,7 +183,7 @@
   /* ---------- generic card/panel ---------- */
   .panel{
     background:var(--bg-card); border:1px solid var(--border-soft); border-radius:var(--radius-lg);
-    padding:22px 24px; margin-bottom:22px;
+    padding:22px 24px; margin-bottom:22px; box-shadow:0 1px 3px rgba(30,45,90,.04);
   }
   .panel h3{font-family:var(--font-display); font-size:15px; font-weight:600; margin:0 0 16px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px;}
   .panel h3 .ph-count{color:var(--text-faint); font-weight:500; font-size:12px;}
@@ -238,7 +230,7 @@
   .filter-dropdown{
     position:absolute; top:calc(100% + 6px); left:0; z-index:30; min-width:220px; max-height:280px; overflow-y:auto;
     background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm);
-    padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.4); display:none;
+    padding:8px; box-shadow:0 12px 30px rgba(40,55,100,.14); display:none;
   }
   .filter-dropdown.open{display:block;}
   .filter-opt{
@@ -269,24 +261,25 @@
   .table-empty-state{text-align:center; padding:40px 20px; color:var(--text-faint); font-size:13px;}
 
   /* ---------- Coverage ---------- */
-  .coverage-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .coverage-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; min-width:0;}
+  .coverage-grid > div{min-width:0; overflow:hidden;}
   @media (max-width:600px){.coverage-grid{grid-template-columns:1fr;}}
-  .coverage-list{display:flex; flex-direction:column; gap:7px; max-height:280px; overflow-y:auto; padding-right:4px;}
+  .coverage-list{display:flex; flex-direction:column; gap:7px; max-height:280px; overflow-y:auto; overflow-x:hidden; padding-right:4px; min-width:0;}
   .coverage-item{
     display:flex; align-items:center; justify-content:space-between; padding:8px 10px;
     background:var(--bg-elev); border-radius:var(--radius-sm); border:1px solid var(--border-soft);
-    gap:8px;
+    gap:8px; min-width:0;
   }
-  .coverage-item .ci-left{display:flex; align-items:center; gap:8px; min-width:0;}
-  .coverage-item .ci-name{font-size:11.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .coverage-item .ci-left{display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto; overflow:hidden;}
+  .coverage-item .ci-name{font-size:11.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
   .coverage-item .ci-count{font-size:10.5px; color:var(--text-faint); flex-shrink:0; white-space:nowrap;}
   .coverage-status-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
 
-  .donut-wrap{display:flex; align-items:center; gap:14px; justify-content:flex-start; flex-wrap:wrap;}
+  .donut-wrap{display:flex; align-items:center; gap:14px; justify-content:flex-start; flex-wrap:wrap; min-width:0;}
   .donut-wrap svg{flex-shrink:0; width:84px; height:84px;}
-  .donut-legend{display:flex; flex-direction:column; gap:7px;}
+  .donut-legend{display:flex; flex-direction:column; gap:7px; min-width:0;}
   .donut-legend-item{display:flex; align-items:center; gap:7px; font-size:11.5px;}
-  .donut-legend-item .dl-dot{width:9px;height:9px;border-radius:3px;}
+  .donut-legend-item .dl-dot{width:9px;height:9px;border-radius:3px; flex-shrink:0;}
   .donut-legend-item .dl-count{color:var(--text-faint); margin-left:auto; font-family:var(--font-mono); font-size:11px;}
 
   ::-webkit-scrollbar{height:8px; width:8px;}
@@ -295,9 +288,9 @@
   ::-webkit-scrollbar-thumb:hover{background:var(--text-faint);}
 
   .tooltip{
-    position:fixed; background:#0a0e18; border:1px solid var(--border); color:var(--text);
+    position:fixed; background:#1a2138; border:1px solid #2a3450; color:#e8ecf6;
     padding:10px 13px; border-radius:8px; font-size:12px; pointer-events:none; z-index:100;
-    box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:280px; display:none; line-height:1.5;
+    box-shadow:0 10px 30px rgba(20,30,60,.25); max-width:280px; display:none; line-height:1.5;
   }
   .tooltip b{color:#fff;}
 </style>
@@ -309,7 +302,7 @@
     <div class="brand">
       <div class="brand-mark">AI</div>
       <div class="brand-text">
-        <h1>Gen AI SDLC Portfolio Dashboard</h1>
+        <h1>AI Project Timeline</h1>
         <p>Agent &amp; Skill development tracking across projects</p>
       </div>
     </div>
@@ -366,8 +359,8 @@ const STATUS_COLORS = {
 };
 
 const AGENT_SKILL_STATUS_COLORS = {
-  'WIP':   { fg: 'var(--status-progress)', bg: 'var(--status-progress-bg)' },
-  'TO DO': { fg: 'var(--status-todo)',     bg: 'var(--status-todo-bg)' },
+  'WIP':   { fg: 'var(--status-progress)', bg: 'var(--status-progress-bg)' }, // green
+  'READY': { fg: 'var(--status-done)',     bg: 'var(--status-done-bg)' },     // blue
 };
 
 function gvizUrl(sheetId, gid) {
@@ -523,7 +516,7 @@ async function fetchStatusList(sheetId, gid) {
   for (let i = 1; i < rows.length; i++) {
     const name = (rows[i][0] || '').trim();
     const status = (rows[i][1] || '').trim().toUpperCase();
-    if (name) map.set(name, status === 'WIP' ? 'WIP' : 'TO DO');
+    if (name) map.set(name, status === 'WIP' ? 'WIP' : 'READY');
   }
   return map;
 }
@@ -680,14 +673,25 @@ function computeProjectMetrics(tasks, today) {
   };
 }
 
-function computePhaseProgress(tasks, phaseOrder) {
+function computePhaseProgress(tasks, phaseOrder, today) {
   return phaseOrder.map(phase => {
     const phaseTasks = tasks.filter(t => t.phase === phase && !t.isMilestone);
     const base = phaseTasks.length ? phaseTasks : tasks.filter(t => t.phase === phase);
     let totalDuration = 0, weighted = 0;
     base.forEach(t => { totalDuration += t.durationDays; weighted += t.durationDays * t.progress; });
     const progress = totalDuration > 0 ? weighted / totalDuration : 0;
-    return { phase, progress, taskCount: base.length };
+
+    // phase-level status: worst task status wins (Delayed > At Risk > In Progress > To Do), Done only if all done
+    const statuses = base.map(t => deriveTaskStatus(t, today));
+    let status = 'To Do';
+    if (statuses.length) {
+      if (statuses.every(s => s === 'Done')) status = 'Done';
+      else if (statuses.some(s => s === 'Delayed')) status = 'Delayed';
+      else if (statuses.some(s => s === 'At Risk')) status = 'At Risk';
+      else if (statuses.some(s => s === 'In Progress' || s === 'Done')) status = 'In Progress';
+    }
+
+    return { phase, progress, taskCount: base.length, status };
   });
 }
 
@@ -711,7 +715,7 @@ function computeCoverage(tasks, statusMap, key) {
   tasks.forEach(t => {
     t[key].forEach(name => {
       if (!coverage.has(name)) {
-        coverage.set(name, { name, taskCount: 0, totalProgress: 0, status: statusMap.get(name) || 'TO DO' });
+        coverage.set(name, { name, taskCount: 0, totalProgress: 0, status: statusMap.get(name) || 'READY' });
       }
       const c = coverage.get(name);
       c.taskCount++;
@@ -743,7 +747,7 @@ async function loadAllProjectData() {
         return { ...proj, error: 'ไม่พบ task ที่อ่านได้ในชีต Project Gantt (ตรวจสอบ gid และ format วันที่)' };
       }
       const metrics = computeProjectMetrics(tasks, today);
-      const phaseProgress = computePhaseProgress(tasks, phaseOrder);
+      const phaseProgress = computePhaseProgress(tasks, phaseOrder, today);
       const milestones = extractMilestones(tasks);
       const agentCoverage = computeCoverage(tasks, agentMap, 'agents');
       const skillCoverage = computeCoverage(tasks, skillMap, 'skills');
@@ -781,7 +785,7 @@ function statusColor(status) {
   return STATUS_COLORS[status] || STATUS_COLORS['To Do'];
 }
 function agentSkillColor(status) {
-  return AGENT_SKILL_STATUS_COLORS[status] || AGENT_SKILL_STATUS_COLORS['TO DO'];
+  return AGENT_SKILL_STATUS_COLORS[status] || AGENT_SKILL_STATUS_COLORS['READY'];
 }
 
 // ============================================================
@@ -869,6 +873,9 @@ function renderPortfolio() {
     if (p.metrics.health === 'Delayed') delayedProjects++;
   });
   const portfolioProgress = totalDuration > 0 ? weightedProgress / totalDuration : 0;
+  const portfolioHealth = validProjects.some(p => p.metrics.health === 'Delayed') ? 'Delayed'
+    : validProjects.some(p => p.metrics.health === 'At Risk') ? 'At Risk' : 'On Track';
+  const portfolioHealthC = healthPillColors(portfolioHealth);
   const nextGoLive = validProjects
     .map(p => ({ name: p.name, end: p.metrics.projectEnd }))
     .sort((a, b) => a.end - b.end)
@@ -878,8 +885,8 @@ function renderPortfolio() {
     <div class="portfolio-summary">
       <div class="ps-block">
         <div class="ps-label">Portfolio Progress</div>
-        <div class="ps-value">${fmtPct(portfolioProgress)}</div>
-        <div class="ps-progress-track"><div class="ps-progress-fill" style="width:${portfolioProgress}%"></div></div>
+        <div class="ps-value" style="color:${portfolioHealthC.fg}">${fmtPct(portfolioProgress)}</div>
+        <div class="ps-progress-track"><div class="ps-progress-fill" style="width:${portfolioProgress}%; background:${portfolioHealthC.fg}"></div></div>
       </div>
       <div class="ps-block">
         <div class="ps-label">Active Projects</div>
@@ -927,11 +934,9 @@ function healthPillColors(health) {
 function projectCardHTML(p) {
   const healthC = healthPillColors(p.metrics.health);
   const progress = p.metrics.overallProgress;
-  const progressColor = progress >= 70 ? 'var(--status-done)' : progress >= 35 ? 'var(--status-progress)' : 'var(--status-todo)';
 
   return `
     <div class="project-card" onclick="goDetail('${p.id}')">
-      ${p.metrics.delayedCount > 0 ? `<div class="pc-warn-badge">${p.metrics.delayedCount} DELAYED</div>` : ''}
       <div class="pc-top">
         <div>
           <h3>${esc(p.name)}</h3>
@@ -942,8 +947,8 @@ function projectCardHTML(p) {
         </span>
       </div>
       <div class="pc-progress-row">
-        <div class="pc-progress-track"><div class="pc-progress-fill" style="width:${progress}%; background:${progressColor}"></div></div>
-        <div class="pc-progress-pct">${fmtPct(progress)}</div>
+        <div class="pc-progress-track"><div class="pc-progress-fill" style="width:${progress}%; background:${healthC.fg}"></div></div>
+        <div class="pc-progress-pct" style="color:${healthC.fg}">${fmtPct(progress)}</div>
       </div>
       <div class="pc-meta">
         <div class="pc-meta-item">
@@ -1016,7 +1021,7 @@ function detailHeaderHTML(p) {
         </div>
         <div class="dh-kpi">
           <div class="k-label">Overall Progress</div>
-          <div class="k-value">${fmtPct(p.metrics.overallProgress)}</div>
+          <div class="k-value" style="color:${healthC.fg}">${fmtPct(p.metrics.overallProgress)}</div>
         </div>
         <div class="dh-kpi">
           <div class="k-label">Tasks Delayed</div>
@@ -1029,12 +1034,12 @@ function detailHeaderHTML(p) {
 
 function phaseProgressPanelHTML(p) {
   const rows = p.phaseProgress.map(ph => {
-    const color = ph.progress >= 100 ? 'var(--status-done)' : ph.progress > 0 ? 'var(--status-progress)' : 'var(--status-todo)';
+    const c = statusColor(ph.status);
     return `
       <div class="phase-row">
         <div class="phase-name" title="${esc(ph.phase)}">${esc(ph.phase)}</div>
-        <div class="phase-track"><div class="phase-fill" style="width:${ph.progress}%; background:${color}"></div></div>
-        <div class="phase-pct">${fmtPct(ph.progress)}</div>
+        <div class="phase-track"><div class="phase-fill" style="width:${ph.progress}%; background:${c.fg}"></div></div>
+        <div class="phase-pct" style="color:${c.fg}">${fmtPct(ph.progress)}</div>
       </div>
     `;
   }).join('');
@@ -1069,7 +1074,7 @@ function ganttPanelHTML(p) {
 
 function colorForGanttTask(task, today) {
   const status = deriveTaskStatus(task, today);
-  return STATUS_COLORS[status].fg;
+  return resolveCSSVar(STATUS_COLORS[status].fg);
 }
 
 function resolveCSSVar(varExpr) {
@@ -1399,11 +1404,11 @@ function renderTaskTable(p) {
   tbody.innerHTML = filtered.map(t => {
     const status = deriveTaskStatus(t, today);
     const sc = statusColor(status);
-    const progColor = t.progress >= 100 ? 'var(--status-done)' : t.progress > 0 ? 'var(--status-progress)' : 'var(--status-todo)';
+    const progColor = sc.fg;
 
     const agentChips = t.agents.length
       ? t.agents.map(a => {
-          const st = p.agentMap.get(a) || 'TO DO';
+          const st = p.agentMap.get(a) || 'READY';
           const c = agentSkillColor(st);
           return `<span class="chip" style="color:${c.fg}; background:${c.bg}; border-color:${c.fg}33">${esc(a)}</span>`;
         }).join('')
@@ -1411,7 +1416,7 @@ function renderTaskTable(p) {
 
     const skillChips = t.skills.length
       ? t.skills.map(s => {
-          const st = p.skillMap.get(s) || 'TO DO';
+          const st = p.skillMap.get(s) || 'READY';
           const c = agentSkillColor(st);
           return `<span class="chip" style="color:${c.fg}; background:${c.bg}; border-color:${c.fg}33">${esc(s)}</span>`;
         }).join('')
@@ -1475,37 +1480,37 @@ function coverageItemHTML(c) {
 }
 
 function initCoverageDonuts(p) {
-  renderDonut(`agentDonut-${p.id}`, p.agentMap);
-  renderDonut(`skillDonut-${p.id}`, p.skillMap);
+  renderDonut(`agentDonut-${p.id}`, p.agentCoverage);
+  renderDonut(`skillDonut-${p.id}`, p.skillCoverage);
 }
 
-function renderDonut(containerId, statusMap) {
+function renderDonut(containerId, coverageList) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const wip = Array.from(statusMap.values()).filter(v => v === 'WIP').length;
-  const todo = Array.from(statusMap.values()).filter(v => v === 'TO DO').length;
-  const total = wip + todo;
+  const wip = coverageList.filter(c => c.status === 'WIP').length;
+  const ready = coverageList.filter(c => c.status === 'READY').length;
+  const total = wip + ready;
   if (!total) { container.innerHTML = ''; return; }
 
   const r = 46, cx = 56, cy = 56, sw = 16;
   const circumference = 2 * Math.PI * r;
   const wipLen = (wip / total) * circumference;
   const wipColor = resolveCSSVar('var(--status-progress)');
-  const todoColor = resolveCSSVar('var(--status-todo)');
+  const readyColor = resolveCSSVar('var(--status-done)');
 
   container.innerHTML = `
     <div class="donut-wrap">
       <svg width="112" height="112" viewBox="0 0 112 112">
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${todoColor}" stroke-width="${sw}" />
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${readyColor}" stroke-width="${sw}" />
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${wipColor}" stroke-width="${sw}"
           stroke-dasharray="${wipLen} ${circumference - wipLen}" stroke-dashoffset="${circumference * 0.25}"
           transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round" />
         <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-family="Sora, sans-serif" font-size="20" font-weight="600" fill="${resolveCSSVar('var(--text)')}">${total}</text>
-        <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="${resolveCSSVar('var(--text-faint)')}">total</text>
+        <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="${resolveCSSVar('var(--text-faint)')}">used</text>
       </svg>
       <div class="donut-legend">
         <div class="donut-legend-item"><span class="dl-dot" style="background:${wipColor}"></span>WIP <span class="dl-count">${wip}</span></div>
-        <div class="donut-legend-item"><span class="dl-dot" style="background:${todoColor}"></span>To Do <span class="dl-count">${todo}</span></div>
+        <div class="donut-legend-item"><span class="dl-dot" style="background:${readyColor}"></span>Ready <span class="dl-count">${ready}</span></div>
       </div>
     </div>
   `;
