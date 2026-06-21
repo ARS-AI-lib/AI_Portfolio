@@ -74,13 +74,13 @@
   .last-updated{font-size:12px; color:var(--text-faint);}
   .btn{
     appearance:none; border:1px solid var(--border); background:var(--bg-card);
-    color:var(--text); font-size:13px; font-weight:500; padding:9px 16px;
-    border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:6px;
+    color:var(--text); font-size:12px; font-weight:500; padding:6px 10px;
+    border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:4px;
     transition:.15s;
   }
   .btn:hover{background:var(--bg-card-hover); border-color:var(--accent);}
   .btn:active{transform:translateY(1px);}
-  .btn-icon{width:14px;height:14px;}
+  .btn-icon{width:12px;height:12px;}
   .btn.spinning .btn-icon{animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -781,7 +781,7 @@ let APP_STATE = {
   projects: [],
   today: new Date(),
   currentProjectId: null,
-  filters: { agents: new Set(), skills: new Set(), phases: new Set() },
+  filters: { phases: new Set(), statuses: new Set() },
 };
 
 const fmtDate = d => d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -1063,7 +1063,7 @@ function phaseProgressPanelHTML(p) {
 function ganttPanelHTML(p) {
   return `
     <div class="panel">
-      <h3>Gantt Timeline <span class="ph-count">${p.tasks.length} tasks</span></h3>
+      <h3>Timeline <span class="ph-count">${p.tasks.length} tasks</span></h3>
       <div class="gantt-legend">
         <span><span class="legend-dot" style="background:${STATUS_COLORS['To Do'].fg}"></span>To Do</span>
         <span><span class="legend-dot" style="background:${STATUS_COLORS['In Progress'].fg}"></span>In Progress</span>
@@ -1101,7 +1101,14 @@ function initGanttCanvas(p) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  const rowTasks = p.tasks;
+  const today = APP_STATE.today;
+  const { phases, statuses } = APP_STATE.filters;
+
+  // apply filters to tasks before rendering
+  let rowTasks = p.tasks;
+  if (phases.size) rowTasks = rowTasks.filter(t => phases.has(t.phase));
+  if (statuses.size) rowTasks = rowTasks.filter(t => statuses.has(deriveTaskStatus(t, today)));
+  
   const dataForRows = rowTasks;
 
   // group by phase, preserve order
@@ -1185,7 +1192,6 @@ function initGanttCanvas(p) {
   ctx.beginPath(); ctx.moveTo(0, headerH); ctx.lineTo(width, headerH); ctx.stroke();
 
   // today line — red dashed, position recalculated from actual current date each render
-  const today = APP_STATE.today;
   if (today >= minDate && today <= maxDate) {
     const tx = xForDate(today);
     ctx.strokeStyle = css.todayLine;
@@ -1356,15 +1362,13 @@ function uniqueSorted(arr) {
 }
 
 function initFilters(p) {
-  const allAgents = uniqueSorted(p.tasks.flatMap(t => t.agents));
-  const allSkills = uniqueSorted(p.tasks.flatMap(t => t.skills));
   const allPhases = p.phaseOrder;
+  const allStatuses = ['To Do', 'In Progress', 'At Risk', 'Delayed', 'Done'];
 
   const bar = document.getElementById(`filterBar-${p.id}`);
   bar.innerHTML = `
     ${filterDropdownHTML('phases', 'Phase', allPhases, p.id)}
-    ${filterDropdownHTML('agents', 'AI Agent', allAgents, p.id)}
-    ${filterDropdownHTML('skills', 'Skill.md', allSkills, p.id)}
+    ${filterDropdownHTML('statuses', 'Status', allStatuses, p.id)}
     <span class="filter-clear" id="filterClear-${p.id}" style="display:none" onclick="clearAllFilters('${p.id}')">Clear filters ✕</span>
   `;
 
@@ -1405,7 +1409,9 @@ window.toggleFilter = function (projectId, key, value, checked) {
   const set = APP_STATE.filters[key];
   if (checked) set.add(value); else set.delete(value);
   updateFilterUI(projectId, key);
-  renderTaskTable(APP_STATE.projects.find(p => p.id === projectId));
+  const p = APP_STATE.projects.find(p => p.id === projectId);
+  renderTaskTable(p);
+  initGanttCanvas(p);
 };
 
 function updateFilterUI(projectId, key) {
@@ -1419,28 +1425,29 @@ function updateFilterUI(projectId, key) {
     btn.classList.remove('has-value');
     badge.innerHTML = '';
   }
-  const anyActive = ['agents', 'skills', 'phases'].some(k => APP_STATE.filters[k].size);
+  const anyActive = ['phases', 'statuses'].some(k => APP_STATE.filters[k].size);
   const clearBtn = document.getElementById(`filterClear-${projectId}`);
   if (clearBtn) clearBtn.style.display = anyActive ? 'flex' : 'none';
 }
 
 window.clearAllFilters = function (projectId) {
-  APP_STATE.filters = { agents: new Set(), skills: new Set(), phases: new Set() };
-  ['agents', 'skills', 'phases'].forEach(k => {
+  APP_STATE.filters = { phases: new Set(), statuses: new Set() };
+  ['phases', 'statuses'].forEach(k => {
     document.querySelectorAll(`#filterDropdown-${k}-${projectId} input`).forEach(cb => cb.checked = false);
     updateFilterUI(projectId, k);
   });
-  renderTaskTable(APP_STATE.projects.find(p => p.id === projectId));
+  const p = APP_STATE.projects.find(p => p.id === projectId);
+  renderTaskTable(p);
+  initGanttCanvas(p);
 };
 
 function renderTaskTable(p) {
-  const { agents, skills, phases } = APP_STATE.filters;
+  const { phases, statuses } = APP_STATE.filters;
   const today = APP_STATE.today;
 
   let filtered = p.tasks;
   if (phases.size) filtered = filtered.filter(t => phases.has(t.phase));
-  if (agents.size) filtered = filtered.filter(t => t.agents.some(a => agents.has(a)));
-  if (skills.size) filtered = filtered.filter(t => t.skills.some(s => skills.has(s)));
+  if (statuses.size) filtered = filtered.filter(t => statuses.has(deriveTaskStatus(t, today)));
 
   const tbody = document.getElementById(`taskTableBody-${p.id}`);
   const countLabel = document.getElementById(`taskCountLabel-${p.id}`);
